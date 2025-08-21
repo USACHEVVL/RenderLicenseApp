@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 from telegram import Bot
 from datetime import datetime
 
+from server.admin.routes import admin_router
 from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
+
 
 load_dotenv()
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -15,6 +17,10 @@ bot = Bot(token=TG_TOKEN)
 
 app = FastAPI()
 
+# Подключаем админский роутер
+app.include_router(admin_router)
+
+# Модель для рендера
 class RenderData(BaseModel):
     license_key: str
     machine_name: str
@@ -24,19 +30,20 @@ class RenderData(BaseModel):
 async def handle_render_notify(data: RenderData):
     db = SessionLocal()
 
-    license = db.query(License).filter_by(license_key=data.license_key).first()
-    if not license:
-        db.close()
-        raise HTTPException(status_code=401, detail="❌ Недействительный ключ")
+    try:
+        license = db.query(License).filter_by(license_key=data.license_key).first()
+        if not license:
+            raise HTTPException(status_code=401, detail="❌ Недействительный ключ")
 
-    if license.machine_name != data.machine_name:
-        db.close()
-        raise HTTPException(status_code=403, detail="🚫 Машина не совпадает с лицензией")
+        # Здесь предполагается, что у License есть поле machine_name — проверь это
+        if hasattr(license, "machine_name") and license.machine_name != data.machine_name:
+            raise HTTPException(status_code=403, detail="🚫 Машина не совпадает с лицензией")
 
-    user = db.query(User).filter_by(id=license.user_id).first()
-    db.close()
-    if not user:
-        raise HTTPException(status_code=404, detail="👤 Пользователь не найден")
+        user = db.query(User).filter_by(id=license.user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="👤 Пользователь не найден")
+    finally:
+        db.close()
 
     now = datetime.now()
     formatted = (
