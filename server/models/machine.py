@@ -11,6 +11,5 @@ class Machine(Base):
     license_id = Column(Integer, ForeignKey("licenses.id"), nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    # Отношения
     license = relationship("License", back_populates="machine")
-    user = relationship("User", back_populates="machines")
+    user = relationship("User", back_populates="machines")  # строка, без импорта

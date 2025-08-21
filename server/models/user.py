@@ -1,8 +1,6 @@
 from sqlalchemy import Column, Integer, BigInteger
 from sqlalchemy.orm import relationship
-from server.db.base_class import Base  # ❗ правильно
-
-
+from server.db.base_class import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -11,5 +9,4 @@ class User(Base):
     telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
 
     licenses = relationship("License", back_populates="user")
-    machines = relationship("Machine", back_populates="user")
-
+    machines = relationship("Machine", back_populates="user")  # строка, без импорта
