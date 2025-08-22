@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Машины</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        a {
+            margin-right: 15px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+        }
+        .expired {
+            color: red;
+        }
+        .active {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <div style="margin-bottom: 20px;">
+        <a href="/admin">← Назад к лицензиям</a>
+    </div>
+
+    <h2>➕ Добавить машину</h2>
+<form method="post" action="/admin/machines/create" style="margin-bottom: 30px;">
+    <label for="name">Название:</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="telegram_id">Telegram ID пользователя:</label>
+    <input type="text" id="telegram_id" name="telegram_id" required>
+
+    <button type="submit">Добавить</button>
+</form>
+
+    <h1>🖥️ Зарегистрированные машины</h1>
+
+    <table>
+        <tr>
+            <th>Название</th>
+            <th>Пользователь</th>
+            <th>Лицензия</th>
+            <th>Статус лицензии</th>
+            <th>Действия</th>
+        </tr>
+        {% for m in machines %}
+        <tr>
+            <td>{{ m.name }}</td>
+            <td>{{ m.telegram_id }}</td>
+            <td><code>{{ m.license_key }}</code></td>
+            <td class="{{ 'active' if 'Активна' in m.license_status else 'expired' }}">{{ m.license_status }}</td>
+            <td>
+                <form method="post" action="/admin/machines/delete" style="display:inline;" onsubmit="return confirm('Удалить эту машину?');">
+                    <input type="hidden" name="machine_id" value="{{ m.id }}">
+                    <button type="submit">🗑 Удалить</button>
+                </form>
+                <form method="post" action="/admin/machines/edit" style="display:inline; margin-left: 10px;">
+                    <input type="hidden" name="machine_id" value="{{ m.id }}">
+                    <input type="text" name="new_name" placeholder="Новое имя" required style="width: 120px;">
+                    <button type="submit">✏</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>

@@ -8,6 +8,7 @@ from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
 from server.models.machine import Machine
+from starlette.status import HTTP_303_SEE_OTHER
 
 admin_router = APIRouter()
 
@@ -15,12 +16,22 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @admin_router.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(request: Request, status: str = "", sort: str = ""):
+def admin_dashboard(request: Request, status: str = "", sort: str = "", q: str = ""):
     db = SessionLocal()
-    licenses_query = db.query(License)
+    now = datetime.datetime.now()
+
+    # Присоединяем таблицы
+    licenses_query = db.query(License).join(User).outerjoin(Machine)
+
+    # --- ПОИСК ---
+    if q:
+        licenses_query = licenses_query.filter(
+            License.license_key.ilike(f"%{q}%") |
+            User.telegram_id.ilike(f"%{q}%") |
+            Machine.name.ilike(f"%{q}%")
+        )
 
     # --- ФИЛЬТР ПО СТАТУСУ ---
-    now = datetime.datetime.now()
     if status == "active":
         licenses_query = licenses_query.filter(License.valid_until >= now)
     elif status == "expired":
@@ -49,11 +60,12 @@ def admin_dashboard(request: Request, status: str = "", sort: str = ""):
 
     db.close()
     return templates.TemplateResponse("index.html", {
-    "request": request,
-    "licenses": enriched_licenses,
-    "selected_status": status,
-    "selected_sort": sort
-})
+        "request": request,
+        "licenses": enriched_licenses,
+        "selected_status": status,
+        "selected_sort": sort,
+        "q": q
+    })
 
 @admin_router.post("/admin/delete")
 def delete_license(license_key: str = Form(...)):
@@ -71,6 +83,124 @@ def delete_license(license_key: str = Form(...)):
         db.close()
 
     return RedirectResponse(url="/admin", status_code=303)
+
+@admin_router.get("/admin/users", response_class=HTMLResponse)
+def admin_users(request: Request):
+    db = SessionLocal()
+    users = db.query(User).all()
+    user_data = []
+
+    for u in users:
+        license_count = db.query(License).filter_by(user_id=u.id).count()
+        machine_count = db.query(Machine).filter_by(user_id=u.id).count()
+
+        user_data.append({
+            "id": u.id,
+            "telegram_id": u.telegram_id,
+            "license_count": license_count,
+            "machine_count": machine_count
+        })
+
+    db.close()
+
+    return templates.TemplateResponse("users.html", {
+        "request": request,
+        "users": user_data
+    })
+
+@admin_router.post("/admin/users/delete")
+def delete_user(user_id: int = Form(...)):
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(id=user_id).first()
+        if user:
+            db.delete(user)
+            db.commit()
+    finally:
+        db.close()
+
+    return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+@admin_router.get("/admin/machines", response_class=HTMLResponse)
+def admin_machines(request: Request):
+    db = SessionLocal()
+    machines = db.query(Machine).all()
+    machine_data = []
+
+    for m in machines:
+        user = db.query(User).filter_by(id=m.user_id).first()
+        license = db.query(License).filter_by(id=m.license_id).first()
+
+        # Безопасно получаем telegram_id
+        telegram_id = "—"
+        if user and user.telegram_id:
+            telegram_id = user.telegram_id
+
+        machine_data.append({
+            "id": m.id,
+            "name": m.name,
+            "telegram_id": telegram_id,
+            "license_key": license.license_key if license else "—",
+            "license_status": "✅ Активна"
+                if license and license.valid_until > datetime.datetime.now()
+                else "❌ Нет/Просрочена"
+        })
+
+    db.close()
+    return templates.TemplateResponse("machines.html", {
+        "request": request,
+        "machines": machine_data
+    })
+
+@admin_router.post("/admin/machines/delete")
+def delete_machine(machine_id: int = Form(...)):
+    db = SessionLocal()
+    machine = db.query(Machine).filter_by(id=machine_id).first()
+    if machine:
+        db.delete(machine)
+        db.commit()
+    db.close()
+    return RedirectResponse(url="/admin/machines", status_code=HTTP_303_SEE_OTHER)
+
+@admin_router.post("/admin/machines/edit")
+def edit_machine(machine_id: int = Form(...), new_name: str = Form(...)):
+    db = SessionLocal()
+    try:
+        machine = db.query(Machine).filter_by(id=machine_id).first()
+        if machine:
+            machine.name = new_name
+            db.commit()
+    finally:
+        db.close()
+    
+    return RedirectResponse(url="/admin/machines", status_code=HTTP_303_SEE_OTHER)
+
+@admin_router.post("/admin/machines/create")
+def create_machine(name: str = Form(...), telegram_id: str = Form(...)):
+    db = SessionLocal()
+    try:
+        # 1. Найти существующего пользователя
+        user = db.query(User).filter_by(telegram_id=telegram_id).first()
+        
+        # 2. Если не найден — создать нового
+        if not user:
+            user = User(telegram_id=telegram_id)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        # 3. Создать машину
+        new_machine = Machine(
+            name=name,
+            user_id=user.id
+        )
+        db.add(new_machine)
+        db.commit()
+
+    finally:
+        db.close()
+
+    return RedirectResponse(url="/admin/machines", status_code=303)
 
 @admin_router.post("/admin/create")
 def create_license(telegram_id: str = Form(...), days: int = Form(...)):

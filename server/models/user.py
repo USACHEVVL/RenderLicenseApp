@@ -8,5 +8,14 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
 
-    licenses = relationship("License", back_populates="user")
-    machines = relationship("Machine", back_populates="user")  # строка, без импорта
+    licenses = relationship(
+        "License",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    machines = relationship(
+        "Machine",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

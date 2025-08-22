@@ -34,10 +34,13 @@
     </style>
 </head>
 <body>
+
     <div style="margin-bottom: 20px;">
   <a href="/admin" style="margin-right: 10px;">📋 Все</a>
   <a href="/admin?status=active" style="margin-right: 10px;">✅ Активные</a>
   <a href="/admin?status=expired">❌ Просроченные</a>
+  <a href="/admin/users" style="margin-left: 30px;">👤 Пользователи</a>
+  <a href="/admin/machines" style="display: inline-block; margin-bottom: 20px;">🖥️ Машины</a>
 </div>
 
     <form method="get" action="/admin/" style="margin-bottom: 20px;">
@@ -66,6 +69,26 @@
     <input type="number" id="days" name="days" value="30" min="1" required>
 
     <button type="submit">Создать лицензию</button>
+</form>
+
+<form method="get" action="/admin" style="margin-bottom: 20px;">
+    <label for="q">Поиск:</label>
+    <input type="text" id="q" name="q" value="{{ q or '' }}" placeholder="ID, ключ, машина">
+
+    <label for="status">Статус:</label>
+    <select name="status" id="status">
+        <option value="" {% if selected_status == "" %}selected{% endif %}>Все</option>
+        <option value="active" {% if selected_status == "active" %}selected{% endif %}>Активные</option>
+        <option value="expired" {% if selected_status == "expired" %}selected{% endif %}>Просроченные</option>
+    </select>
+
+    <label for="sort">Сортировка:</label>
+    <select name="sort" id="sort">
+        <option value="valid_until_asc" {% if selected_sort == "valid_until_asc" %}selected{% endif %}>По сроку ↑</option>
+        <option value="valid_until_desc" {% if selected_sort == "valid_until_desc" %}selected{% endif %}>По сроку ↓</option>
+    </select>
+
+    <button type="submit">Применить</button>
 </form>
 
     <h1>🔐 Лицензии</h1>
@@ -98,7 +121,6 @@
                 </form>
                 {% endif %}
             <td>
-
         </tr>
         {% endfor %}
     </table>
