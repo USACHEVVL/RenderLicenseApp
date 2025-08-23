@@ -39,14 +39,12 @@
         <tr>
             <th>Telegram ID</th>
             <th>Количество лицензий</th>
-            <th>Количество машин</th>
             <th>Действия</th>
         </tr>
         {% for user in users %}
         <tr>
             <td>{{ user.telegram_id }}</td>
             <td>{{ user.license_count }}</td>
-            <td>{{ user.machine_count }}</td>
             <td>
                 <form method="post" action="/admin/users/delete" onsubmit="return confirm('Удалить пользователя и все его данные?');">
                     <input type="hidden" name="user_id" value="{{ user.id }}">
