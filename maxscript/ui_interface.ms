@@ -15,41 +15,73 @@ buttontext:"Notifier"
         (
             local url = "http://127.0.0.1:8000/api/check_license?license_key=" + key
             local outputFile = getDir #temp + "\\license_check_result.json"
+            local statusFile = getDir #temp + "\\license_check_status.txt"
 
-            local cmd = "curl -s -o \"" + outputFile + "\" \"" + url + "\""
+            local cmd = "curl -s -o \"" + outputFile + "\" -w \"%{http_code}\" \"" + url + "\" > \"" + statusFile + "\""
             shellLaunch "cmd.exe" ("/C " + cmd)
 
             sleep 0.5
 
-            if doesFileExist outputFile then
+            local httpCode = undefined
+            if doesFileExist statusFile then
             (
-                local f = openFile outputFile
-                local raw = readLine f
-                close f
-                deleteFile outputFile
+                local sf = openFile statusFile
+                httpCode = readLine sf
+                close sf
+                deleteFile statusFile
+            )
 
-                try (
-                    local json = parseJSON raw
-                    if json != undefined then (
-                        if json.valid != undefined then (
-                            if json.valid == true then
-                                statusLabel.text = "? License valid"
-                            else
-                                statusLabel.text = "? License invalid"
-                        ) else if json.status != undefined then (
-                            if json.status == "✅ valid" then
-                                statusLabel.text = "? License valid"
-                            else
-                                statusLabel.text = "? License invalid"
-                        ) else (
+            if httpCode == "200" then
+            (
+                if doesFileExist outputFile then
+                (
+                    local f = openFile outputFile
+                    local raw = readLine f
+                    close f
+                    deleteFile outputFile
+
+                    if raw != undefined and raw != "" then
+                    (
+                        try (
+                            local json = parseJSON raw
+                            if json != undefined then (
+                                if json.valid != undefined then (
+                                    if json.valid == true then
+                                        statusLabel.text = "? License valid"
+                                    else
+                                        statusLabel.text = "? License invalid"
+                                ) else if json.status != undefined then (
+                                    if json.status == "✅ valid" then
+                                        statusLabel.text = "? License valid"
+                                    else
+                                        statusLabel.text = "? License invalid"
+                                ) else (
+                                    statusLabel.text = "? Invalid server response"
+                                )
+                            ) else (
+                                statusLabel.text = "? Invalid server response"
+                            )
+                        ) catch (
                             statusLabel.text = "? Invalid server response"
                         )
-                    ) else (
+                    )
+                    else
+                    (
                         statusLabel.text = "? Invalid server response"
                     )
-                ) catch (
-                    statusLabel.text = "? Invalid server response"
                 )
+                else
+                (
+                    statusLabel.text = "? Server not available"
+                )
+            )
+            else if httpCode == "404" then
+            (
+                statusLabel.text = "? Endpoint not found"
+            )
+            else if httpCode != undefined then
+            (
+                statusLabel.text = "? Server error"
             )
             else
             (
