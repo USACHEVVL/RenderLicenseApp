@@ -6,7 +6,7 @@ buttontext:"Notifier"
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
         edittext licenseInput "License Key:" width:280
-        label machineLabel "Checking license..." width:280
+        label statusLabel "Checking license..." width:280
         checkbox notifyStart "Notify on render start"
 
         button saveBtn "Save settings" width:280
@@ -32,24 +32,24 @@ buttontext:"Notifier"
                     local json = parseJSON raw
                     if json != undefined then
                     (
-                        if json.status == "? valid" then
-                            machineLabel.text = json.machine_name
+                        if (findString json.status "valid") != undefined then
+                            statusLabel.text = "? License valid"
                         else
-                            machineLabel.text = "? License invalid"
+                            statusLabel.text = "? License invalid"
                     )
                 ) catch (
-                    machineLabel.text = "? Invalid server response"
+                    statusLabel.text = "? Invalid server response"
                 )
             )
             else
             (
-                machineLabel.text = "? Server not available"
+                statusLabel.text = "? Server not available"
             )
         )
 
         on licenseInput entered val do
         (
-            machineLabel.text = "Checking..."
+            statusLabel.text = "Checking..."
             checkLicense val
         )
 
@@ -57,7 +57,6 @@ buttontext:"Notifier"
         (
             local iniPath = getDir #userScripts + "\\render_license_config.ini"
             setINISetting iniPath "RenderLicense" "license_key" licenseInput.text
-            setINISetting iniPath "RenderLicense" "machine_name" machineLabel.text
             setINISetting iniPath "RenderLicense" "notify_start" (if notifyStart.checked then "true" else "false")
             messageBox ("? Settings saved!\n\nINI file:\n" + iniPath) title:"RenderLicenseApp"
         )
@@ -66,8 +65,11 @@ buttontext:"Notifier"
         (
             local iniPath = getDir #userScripts + "\\render_license_config.ini"
             licenseInput.text = getINISetting iniPath "RenderLicense" "license_key"
-            machineLabel.text = getINISetting iniPath "RenderLicense" "machine_name"
             notifyStart.checked = (getINISetting iniPath "RenderLicense" "notify_start") == "true"
+            if licenseInput.text != "" then (
+                statusLabel.text = "Checking..."
+                checkLicense licenseInput.text
+            )
         )
 
         on saveBtn pressed do saveSettings()
@@ -116,11 +118,10 @@ buttontext:"Notifier"
         local iniPath = getDir #userScripts + "\\render_license_config.ini"
         local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
         local license = getINISetting iniPath "RenderLicense" "license_key"
-        local machine = getINISetting iniPath "RenderLicense" "machine_name"
 
         if notifyStart == "true" then
         (
-            if machine != "? License invalid" then
+            if license != "" then
             (
                 local sceneName = if maxFileName != "" then maxFileName else "Untitled"
                 local cameraName = getRenderViewName()
