@@ -1,20 +1,17 @@
+"""Utility script to remove all licenses for a Telegram user."""
+
 from server.db.session import SessionLocal
-from server.models import User, License
+from server.models.license import License
+from server.models.user import User
 
-tg_id = "670562262"  # замените на нужный Telegram ID
+TG_ID = "670562262"  # замените на нужный Telegram ID
 
-db = SessionLocal()
+with SessionLocal() as db:
+    user = db.query(User).filter_by(telegram_id=TG_ID).first()
 
-user = db.query(User).filter_by(telegram_id=tg_id).first()
-
-if not user:
-    print("Пользователь не найден.")
-else:
-    # Удаляем лицензии
-    deleted = 0
-    for lic in db.query(License).filter_by(user_id=user.id).all():
-        db.delete(lic)
-        deleted += 1
-
-    db.commit()
-    print(f"Удалено лицензий: {deleted}")
+    if not user:
+        print("Пользователь не найден.")
+    else:
+        deleted = db.query(License).filter_by(user_id=user.id).delete()
+        db.commit()
+        print(f"Удалено лицензий: {deleted}")

@@ -1,27 +1,27 @@
-from server.db.session import SessionLocal, SQLALCHEMY_DATABASE_URL
-from server.models.user import User
+"""Populate the database with demo users and licenses."""
+
+from server.db.session import SQLALCHEMY_DATABASE_URL, SessionLocal
 from server.models.license import License
+from server.models.user import User
 
 print(f"🗂 Используется база данных: {SQLALCHEMY_DATABASE_URL}")
 
-# Очистка и добавление тестовых данных
-session = SessionLocal()
+with SessionLocal() as session:
+    print("🧹 Очищаю таблицы...")
+    session.query(License).delete()
+    session.query(User).delete()
 
-print("🧹 Очищаю таблицы...")
-session.query(License).delete()
-session.query(User).delete()
+    print("➕ Добавляю пользователей...")
+    user = User(telegram_id="670562262", username="Usachev_LAB")
+    session.add(user)
+    session.commit()
 
-print("➕ Добавляю пользователей...")
-user = User(telegram_id="670562262", username="Usachev_LAB")
-session.add(user)
-session.commit()
+    print("🔗 Привязываю лицензии...")
+    licenses = [
+        License(license_key=key, user_id=user.id)
+        for key in ("abc123", "def456")
+    ]
+    session.add_all(licenses)
+    session.commit()
 
-print("🔗 Привязываю лицензии...")
-license1 = License(license_key="abc123", user_id=user.id)
-license2 = License(license_key="def456", user_id=user.id)
-
-session.add_all([license1, license2])
-session.commit()
-
-print("✅ База данных успешно заполнена.")
-session.close()
+    print("✅ База данных успешно заполнена.")
