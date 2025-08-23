@@ -6,6 +6,7 @@ from telegram import Bot
 from datetime import datetime
 
 from server.admin.routes import admin_router
+from server.api import license_router
 from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
@@ -19,6 +20,7 @@ app = FastAPI()
 
 # Подключаем админский роутер
 app.include_router(admin_router)
+app.include_router(license_router.router, prefix="/api")
 
 # Модель для рендера
 class RenderData(BaseModel):
