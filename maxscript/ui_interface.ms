@@ -6,7 +6,7 @@ buttontext:"Notifier"
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
         edittext licenseInput "License Key:" width:280
-        label machineLabel "Checking machine..." width:280
+        label machineLabel "Checking license..." width:280
         checkbox notifyStart "Notify on render start"
 
         button saveBtn "Save settings" width:280
@@ -35,7 +35,7 @@ buttontext:"Notifier"
                         if json.status == "? valid" then
                             machineLabel.text = json.machine_name
                         else
-                            machineLabel.text = "? Machine not linked"
+                            machineLabel.text = "? License invalid"
                     )
                 ) catch (
                     machineLabel.text = "? Invalid server response"
@@ -120,7 +120,7 @@ buttontext:"Notifier"
 
         if notifyStart == "true" then
         (
-            if machine != "? Machine not linked" then
+            if machine != "? License invalid" then
             (
                 local sceneName = if maxFileName != "" then maxFileName else "Untitled"
                 local cameraName = getRenderViewName()
@@ -134,7 +134,7 @@ buttontext:"Notifier"
             )
             else
             (
-                messageBox "? This machine is not linked to the license. Render is unavailable." title:"RenderLicenseApp"
+                messageBox "? License invalid. Render is unavailable." title:"RenderLicenseApp"
             )
         )
     )

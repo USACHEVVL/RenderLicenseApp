@@ -40,7 +40,6 @@
   <a href="/admin?status=active" style="margin-right: 10px;">✅ Активные</a>
   <a href="/admin?status=expired">❌ Просроченные</a>
   <a href="/admin/users" style="margin-left: 30px;">👤 Пользователи</a>
-  <a href="/admin/machines" style="display: inline-block; margin-bottom: 20px;">🖥️ Машины</a>
 </div>
 
     <form method="get" action="/admin/" style="margin-bottom: 20px;">
@@ -73,7 +72,7 @@
 
 <form method="get" action="/admin" style="margin-bottom: 20px;">
     <label for="q">Поиск:</label>
-    <input type="text" id="q" name="q" value="{{ q or '' }}" placeholder="ID, ключ, машина">
+    <input type="text" id="q" name="q" value="{{ q or '' }}" placeholder="ID или ключ">
 
     <label for="status">Статус:</label>
     <select name="status" id="status">
@@ -97,7 +96,6 @@
             <th>Ключ</th>
             <th>Действует до</th>
             <th>Пользователь</th>
-            <th>Машина</th>
             <th>Статус</th>
             <th>Действия</th>
         </tr>
@@ -106,7 +104,6 @@
             <td><code>{{ lic.key }}</code></td>
             <td>{{ lic.valid_until }}</td>
             <td>{{ lic.user_id }}</td>
-            <td>{{ lic.machine }}</td>
             <td class="{{ 'active' if 'Активна' in lic.status else 'expired' }}">{{ lic.status }}</td>
             <td>
                 <form method="post" action="/admin/delete" style="display:inline;" onsubmit="return confirm('Удалить эту лицензию?');">
