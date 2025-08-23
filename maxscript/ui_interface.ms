@@ -13,7 +13,7 @@ buttontext:"Notifier"
 
         fn checkLicense key =
         (
-            local url = "http://127.0.0.1:8000/check_license?license_key=" + key
+            local url = "http://127.0.0.1:8000/api/check_license?license_key=" + key
             local outputFile = getDir #temp + "\\license_check_result.json"
 
             local cmd = "curl -s -o \"" + outputFile + "\" \"" + url + "\""
@@ -32,7 +32,7 @@ buttontext:"Notifier"
                     local json = parseJSON raw
                     if json != undefined then
                     (
-                        if (findString json.status "valid") != undefined then
+                        if json.valid == true then
                             statusLabel.text = "? License valid"
                         else
                             statusLabel.text = "? License invalid"
@@ -119,26 +119,24 @@ buttontext:"Notifier"
         local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
         local license = getINISetting iniPath "RenderLicense" "license_key"
 
-        if notifyStart == "true" then
+        if license == "" then
         (
-            if license != "" then
-            (
-                local sceneName = if maxFileName != "" then maxFileName else "Untitled"
-                local cameraName = getRenderViewName()
-                local startTime = localTime as string
-
-                local logText = "?? Scene: " + sceneName + "\n" +
-                                "?? View: " + cameraName + "\n" +
-                                "?? Render start: " + startTime + "\n"
-
-                messageBox logText title:"RenderLicenseApp"
-            )
-            else
-            (
-                messageBox "? License invalid. Render is unavailable." title:"RenderLicenseApp"
-            )
+            messageBox "? License invalid. Render is unavailable." title:"RenderLicenseApp"
+            return
         )
-    )
+
+        if notifyStart != "true" then return
+
+        local sceneName = if maxFileName != "" then maxFileName else "Untitled"
+        local cameraName = getRenderViewName()
+        local startTime = localTime as string
+
+        local logText = "?? Scene: " + sceneName + "\n" +
+                        "?? View: " + cameraName + "\n" +
+                        "?? Render start: " + startTime + "\n"
+
+        messageBox logText title:"RenderLicenseApp"
+        )
 
     fn renderLicense_onRenderEnd =
     (
