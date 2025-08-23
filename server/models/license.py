@@ -11,4 +11,3 @@ class License(Base):
     valid_until = Column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="licenses")
-    machine = relationship("Machine", back_populates="license", uselist=False)

@@ -13,9 +13,3 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
-
-    machines = relationship(
-        "Machine",
-        back_populates="user",
-        cascade="all, delete-orphan"
-    )
