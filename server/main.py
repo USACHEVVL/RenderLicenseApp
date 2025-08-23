@@ -23,7 +23,6 @@ app.include_router(admin_router)
 # Модель для рендера
 class RenderData(BaseModel):
     license_key: str
-    machine_name: str
     log: str
 
 @app.post("/api/render_notify")
@@ -35,10 +34,6 @@ async def handle_render_notify(data: RenderData):
         if not license:
             raise HTTPException(status_code=401, detail="❌ Недействительный ключ")
 
-        # Здесь предполагается, что у License есть поле machine_name — проверь это
-        if hasattr(license, "machine_name") and license.machine_name != data.machine_name:
-            raise HTTPException(status_code=403, detail="🚫 Машина не совпадает с лицензией")
-
         user = db.query(User).filter_by(id=license.user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="👤 Пользователь не найден")
@@ -47,7 +42,7 @@ async def handle_render_notify(data: RenderData):
 
     now = datetime.now()
     formatted = (
-        f"🖥️ {data.machine_name} завершила рендер\n"
+        "🎬 Рендер завершён\n"
         f"🕒 Время: {now.strftime('%H:%M')}\n"
         f"📅 Дата: {now.strftime('%d.%m.%Y')}\n"
         f"📝 Лог: {data.log}"

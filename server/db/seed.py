@@ -17,8 +17,8 @@ session.add(user)
 session.commit()
 
 print("🔗 Привязываю лицензии...")
-license1 = License(license_key="abc123", machine_name="HomePC", user_id=user.id)
-license2 = License(license_key="def456", machine_name="WorkPC", user_id=user.id)
+license1 = License(license_key="abc123", user_id=user.id)
+license2 = License(license_key="def456", user_id=user.id)
 
 session.add_all([license1, license2])
 session.commit()
