@@ -25,5 +25,9 @@ def create_license(telegram_id: str, license_key: str, db: Session = Depends(get
 def check_license(license_key: str, db: Session = Depends(get_db)):
     license = license_service.get_license_by_key(db, license_key)
     if license:
-        return {"status": "✅ valid", "license_key": license.license_key}
-    return {"status": "❌ invalid"}
+        return {
+            "status": "✅ valid",
+            "license_key": license.license_key,
+            "valid": True,
+        }
+    return {"status": "❌ invalid", "valid": False}

@@ -30,12 +30,22 @@ buttontext:"Notifier"
 
                 try (
                     local json = parseJSON raw
-                    if json != undefined then
-                    (
-                        if json.valid == true then
-                            statusLabel.text = "? License valid"
-                        else
-                            statusLabel.text = "? License invalid"
+                    if json != undefined then (
+                        if json.valid != undefined then (
+                            if json.valid == true then
+                                statusLabel.text = "? License valid"
+                            else
+                                statusLabel.text = "? License invalid"
+                        ) else if json.status != undefined then (
+                            if json.status == "✅ valid" then
+                                statusLabel.text = "? License valid"
+                            else
+                                statusLabel.text = "? License invalid"
+                        ) else (
+                            statusLabel.text = "? Invalid server response"
+                        )
+                    ) else (
+                        statusLabel.text = "? Invalid server response"
                     )
                 ) catch (
                     statusLabel.text = "? Invalid server response"
