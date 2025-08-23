@@ -4,7 +4,6 @@
 ./migrations/script.py.mako
 ./migrations/env.py
 ./migrations/versions
-./migrations/versions/8c2b5e5d6b8f_remove_machines_table.py
 ./migrations/versions/00bbaad016cc_initial_tables.py
 ./migrations/versions/2f4c2bfb5a57_initial_tables.py
 ./migrations/README
