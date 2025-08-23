@@ -1,12 +1,12 @@
+"""Simple debug script to inspect users and licenses."""
+
 from server.db.session import SessionLocal
-from server.models.user import User
 from server.models.license import License
+from server.models.user import User
 
-db = SessionLocal()
-users = db.query(User).all()
-licenses = db.query(License).all()
+with SessionLocal() as db:
+    users = db.query(User).all()
+    licenses = db.query(License).all()
 
-print(f"Users: {users}")
-print(f"Licenses: {licenses}")
-
-db.close()
+    print(f"Users: {users}")
+    print(f"Licenses: {licenses}")
