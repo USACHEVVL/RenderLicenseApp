@@ -79,7 +79,7 @@ async def pay_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     await query.edit_message_text(
         "💳 Переведите 50₽ на номер +79538569110 (Сбербанк или Тинькофф).\n\n📤 После оплаты отправьте чек прямо в этот чат.",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data='licenses_menu')]])
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Отменить оплату", callback_data='cancel_payment')]])
     )
     return WAITING_FOR_PAYMENT_PROOF
 
@@ -188,6 +188,13 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await start(update, context)
     elif command == 'pay_license':
         return await pay_license(update, context)
+    elif command == 'cancel_payment':
+        query = update.callback_query
+        await query.answer()
+        context.user_data.pop('renew_license_id', None)
+        await query.edit_message_text("❌ Оплата отменена.")
+        await start(update, context)
+        return ConversationHandler.END
     elif command.startswith('grant_license_'):
         return await grant_license(update, context)
     elif command.startswith('confirm_renew_'):
@@ -204,7 +211,7 @@ async def handle_renew_license(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.edit_message_text(
         "💳 Чтобы продлить лицензию, переведите 50₽ на номер +79538569110 (Сбербанк или Тинькофф).\n\n📤 После оплаты отправьте чек прямо в этот чат.",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 Назад", callback_data='licenses_menu')]
+            [InlineKeyboardButton("❌ Отменить оплату", callback_data='cancel_payment')]
         ])
     )
     return WAITING_FOR_PAYMENT_PROOF
@@ -214,6 +221,7 @@ conv_handler = ConversationHandler(
     entry_points=[CallbackQueryHandler(handle_buttons)],
     states={
         WAITING_FOR_PAYMENT_PROOF: [
+            CallbackQueryHandler(handle_buttons),
             MessageHandler(filters.ALL, handle_payment_proof),
         ],
     },
