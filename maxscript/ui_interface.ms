@@ -3,6 +3,10 @@ category:"RenderLicenseApp"
 tooltip:"Render Notifier"
 buttontext:"Notifier"
 (
+    global renderLicense_onRenderStart
+    global renderLicense_onRenderEnd
+    global getRenderViewName
+
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
         edittext licenseInput "License Key:" width:280
@@ -110,8 +114,8 @@ buttontext:"Notifier"
             callbacks.removeScripts id:#renderLicenseStart
             callbacks.removeScripts id:#renderLicenseEnd
 
-            callbacks.addScript #preRender "renderLicense_onRenderStart()" id:#renderLicenseStart
-            callbacks.addScript #postRender "renderLicense_onRenderEnd()" id:#renderLicenseEnd
+            callbacks.addScript #preRender "if (::renderLicense_onRenderStart != undefined) then ::renderLicense_onRenderStart()" id:#renderLicenseStart
+            callbacks.addScript #postRender "if (::renderLicense_onRenderEnd != undefined) then ::renderLicense_onRenderEnd()" id:#renderLicenseEnd
         )
     )
 
