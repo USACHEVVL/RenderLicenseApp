@@ -148,11 +148,11 @@ buttontext:"Notifier"
     local license = getINISetting iniPath "RenderLicense" "license_key"
 
     if license == "" do (
-    messageBox "❌ License is missing. Render is unavailable." title:"RenderLicenseApp"
-    return
-)
+        messageBox "❌ License is missing. Render is unavailable." title:"RenderLicenseApp"
+        return undefined
+    )
 
-    if notifyStart != "true" then return
+    if notifyStart != "true" then return undefined
 
     local sceneName
     if maxFileName != "" then
