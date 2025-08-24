@@ -12,7 +12,7 @@ with SessionLocal() as session:
     session.query(User).delete()
 
     print("➕ Добавляю пользователей...")
-    user = User(telegram_id="670562262", username="Usachev_LAB")
+    user = User(telegram_id="670562262")
     session.add(user)
     session.commit()
 
