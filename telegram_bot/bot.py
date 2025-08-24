@@ -68,7 +68,7 @@ async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
                 msg_lines.append(f"<code>{lic.license_key}</code> ({status})")
 
-                row = [InlineKeyboardButton("🔁 Продлить" if is_valid else "♻️ Продлить", callback_data=f"renew_{lic.id}")]
+                row = [InlineKeyboardButton("🔁 Продлить", callback_data=f"renew_{lic.id}")]
                 kb.append(row)
 
                 (active_licenses if is_valid else expired_licenses).append(lic)
