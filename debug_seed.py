@@ -18,14 +18,18 @@ if not user:
 # Генерируем ключ
 key = hashlib.sha256(f"{user.telegram_id}-expired".encode()).hexdigest()[:16]
 
-# Создаём лицензию с истёкшим сроком
-expired_license = License(
-    user_id=user.id,
-    license_key=key,
-    valid_until=datetime.datetime.now() - datetime.timedelta(days=10)
-)
-
-db.add(expired_license)
+# Создаём или обновляем лицензию с истёкшим сроком
+expired_license = db.query(License).filter_by(user_id=user.id).first()
+if expired_license:
+    expired_license.license_key = key
+    expired_license.valid_until = datetime.datetime.now() - datetime.timedelta(days=10)
+else:
+    expired_license = License(
+        user_id=user.id,
+        license_key=key,
+        valid_until=datetime.datetime.now() - datetime.timedelta(days=10),
+    )
+    db.add(expired_license)
 db.commit()
 db.close()
 

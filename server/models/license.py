@@ -7,7 +7,7 @@ class License(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     license_key = Column(String, unique=True, index=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     valid_until = Column(DateTime, nullable=True)
 
-    user = relationship("User", back_populates="licenses")
+    user = relationship("User", back_populates="license")

@@ -141,8 +141,17 @@ async def grant_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.refresh(user)
 
         license_key = hashlib.sha256(f"{user_id}-{datetime.datetime.now()}".encode()).hexdigest()[:16]
-        lic = License(user_id=user.id, license_key=license_key, valid_until=datetime.datetime.now() + datetime.timedelta(days=30))
-        db.add(lic)
+        lic = db.query(License).filter_by(user_id=user.id).first()
+        if lic:
+            lic.license_key = license_key
+            lic.valid_until = datetime.datetime.now() + datetime.timedelta(days=30)
+        else:
+            lic = License(
+                user_id=user.id,
+                license_key=license_key,
+                valid_until=datetime.datetime.now() + datetime.timedelta(days=30),
+            )
+            db.add(lic)
         db.commit()
         await context.bot.send_message(
             chat_id=user_id,
