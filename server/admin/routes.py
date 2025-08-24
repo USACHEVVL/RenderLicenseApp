@@ -76,6 +76,21 @@ def delete_license(license_key: str = Form(...)):
 
     return RedirectResponse(url="/admin", status_code=303)
 
+
+@admin_router.post("/admin/extend")
+def extend_license(license_key: str = Form(...)):
+    """Extend the validity of a license by 30 days."""
+    db = SessionLocal()
+    try:
+        license = db.query(License).filter_by(license_key=license_key).first()
+        if license:
+            license.valid_until += datetime.timedelta(days=30)
+            db.commit()
+    finally:
+        db.close()
+
+    return RedirectResponse(url="/admin", status_code=303)
+
 @admin_router.get("/admin/users", response_class=HTMLResponse)
 def admin_users(request: Request):
     db = SessionLocal()
