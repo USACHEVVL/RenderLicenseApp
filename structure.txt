@@ -10,8 +10,6 @@
 ./structure.txt
 ./server
 ./server/config.py
-./server/routes
-./server/routes/render_notify.py
 ./server/api
 ./server/api/user_router.py
 ./server/api/license_router.py
