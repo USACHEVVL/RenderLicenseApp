@@ -20,74 +20,59 @@ buttontext:"Notifier"
             local cmd = "curl -s -o \"" + outputFile + "\" -w \"%{http_code}\" \"" + url + "\" > \"" + statusFile + "\""
             shellLaunch "cmd.exe" ("/C " + cmd)
 
-            -- wait for curl to finish writing files (max ~2 seconds)
             for i = 1 to 20 while (not (doesFileExist statusFile)) do sleep 0.1
             for i = 1 to 20 while (not (doesFileExist outputFile)) do sleep 0.1
 
             local httpCode = undefined
-            if doesFileExist statusFile then
-            (
+            if doesFileExist statusFile then (
                 local sf = openFile statusFile
                 httpCode = readLine sf
                 close sf
                 deleteFile statusFile
             )
 
-            if httpCode == "200" then
-            (
-                if doesFileExist outputFile then
-                (
+            if httpCode == "200" then (
+                if doesFileExist outputFile then (
                     local f = openFile outputFile
                     local raw = readLine f
                     close f
                     deleteFile outputFile
 
-                    if raw != undefined and raw != "" then
-                    (
+                    if raw != undefined and raw != "" then (
                         try (
                             local json = parseJSON raw
                             if json != undefined then (
                                 if json.valid != undefined then (
                                     if json.valid == true then
-                                        statusLabel.text = "? License valid"
+                                        statusLabel.text = "✅ License valid"
                                     else
-                                        statusLabel.text = "? License invalid"
+                                        statusLabel.text = "❌ License invalid"
                                 ) else if json.status != undefined then (
                                     if json.status == "✅ valid" then
-                                        statusLabel.text = "? License valid"
+                                        statusLabel.text = "✅ License valid"
                                     else
-                                        statusLabel.text = "? License invalid"
+                                        statusLabel.text = "❌ License invalid"
                                 ) else (
-                                    statusLabel.text = "? Invalid server response"
+                                    statusLabel.text = "❌ Invalid server response"
                                 )
                             ) else (
-                                statusLabel.text = "? Invalid server response"
+                                statusLabel.text = "❌ Invalid server response"
                             )
                         ) catch (
-                            statusLabel.text = "? Invalid server response"
+                            statusLabel.text = "❌ Invalid server response"
                         )
+                    ) else (
+                        statusLabel.text = "❌ Empty or undefined response"
                     )
-                    else
-                    (
-                        statusLabel.text = "? Invalid server response"
-                    )
+                ) else (
+                    statusLabel.text = "❌ Output file missing"
                 )
-                else
-                (
-                    statusLabel.text = "? Server not available"
-                )
-            )
-            else if httpCode == "404" then
-            (
-                statusLabel.text = "? Endpoint not found"
-            )
-            else if httpCode != undefined then
-            (
-                statusLabel.text = "? Server error"
-            )
-            else
-            (
-                statusLabel.text = "? Server not available"
+            ) else if httpCode == "404" then (
+                statusLabel.text = "❌ API endpoint not found"
+            ) else if httpCode != undefined then (
+                statusLabel.text = "❌ Server error (" + httpCode + ")"
+            ) else (
+                statusLabel.text = "❌ Server not available"
             )
         )
 
@@ -102,7 +87,7 @@ buttontext:"Notifier"
             local iniPath = getDir #userScripts + "\\render_license_config.ini"
             setINISetting iniPath "RenderLicense" "license_key" licenseInput.text
             setINISetting iniPath "RenderLicense" "notify_start" (if notifyStart.checked then "true" else "false")
-            messageBox ("? Settings saved!\n\nINI file:\n" + iniPath) title:"RenderLicenseApp"
+            messageBox ("✅ Settings saved!\n\nINI file:\n" + iniPath) title:"RenderLicenseApp"
         )
 
         fn loadSettings =
@@ -138,8 +123,7 @@ buttontext:"Notifier"
 
         if cam != undefined then
             try (cam.name) catch ("Camera")
-        else
-        (
+        else (
             local vt = viewport.getType()
             case vt of
             (
@@ -158,29 +142,34 @@ buttontext:"Notifier"
     )
 
     fn renderLicense_onRenderStart =
-    (
-        local iniPath = getDir #userScripts + "\\render_license_config.ini"
-        local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
-        local license = getINISetting iniPath "RenderLicense" "license_key"
+(
+    local iniPath = getDir #userScripts + "\\render_license_config.ini"
+    local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
+    local license = getINISetting iniPath "RenderLicense" "license_key"
 
-        if license == "" then
-        (
-            messageBox "? License invalid. Render is unavailable." title:"RenderLicenseApp"
-            return
-        )
+    if license == "" do (
+    messageBox "❌ License is missing. Render is unavailable." title:"RenderLicenseApp"
+    return
+)
 
-        if notifyStart != "true" then return
+    if notifyStart != "true" then return
 
-        local sceneName = if maxFileName != "" then maxFileName else "Untitled"
-        local cameraName = getRenderViewName()
-        local startTime = localTime as string
+    local sceneName
+    if maxFileName != "" then
+        sceneName = maxFileName
+    else
+        sceneName = "Untitled"
 
-        local logText = "?? Scene: " + sceneName + "\n" +
-                        "?? View: " + cameraName + "\n" +
-                        "?? Render start: " + startTime + "\n"
+    local cameraName = getRenderViewName()
+    local startTime = localTime as string
 
-        messageBox logText title:"RenderLicenseApp"
-        )
+    local logText = "🖼 Scene: " + sceneName + "\n" +
+                    "📷 View: " + cameraName + "\n" +
+                    "🚀 Render start: " + startTime + "\n"
+
+    messageBox logText title:"RenderLicenseApp"
+)
+
 
     fn renderLicense_onRenderEnd =
     (
@@ -188,13 +177,12 @@ buttontext:"Notifier"
         local cameraName = getRenderViewName()
         local endTime = localTime as string
 
-        local logText = "?? Scene: " + sceneName + "\n" +
-                        "?? View: " + cameraName + "\n" +
-                        "? Render finished: " + endTime + "\n"
+        local logText = "🖼 Scene: " + sceneName + "\n" +
+                        "📷 View: " + cameraName + "\n" +
+                        "⏰ Render finished: " + endTime + "\n"
 
         messageBox logText title:"RenderLicenseApp"
     )
 
-    -- ?? Open the UI on macro execution
     createDialog RenderNotifyRollout
 )
