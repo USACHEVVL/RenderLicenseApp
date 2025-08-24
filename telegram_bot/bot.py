@@ -55,25 +55,24 @@ async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
         if not licenses:
             msg = "📭 У вас нет активных лицензий."
         else:
-            active_licenses = []
-            expired_licenses = []
             msg_lines = ["🔐 Ваши лицензии:"]
 
             now = datetime.datetime.now()
+            all_expired = True
 
             for lic in licenses:
                 is_valid = lic.valid_until > now
+                if is_valid:
+                    all_expired = False
                 days_left = (lic.valid_until - now).days
                 status = f"{days_left} дн." if is_valid else "❌ Просрочена"
 
                 msg_lines.append(f"<code>{lic.license_key}</code> ({status})")
 
-                row = [InlineKeyboardButton("🔁 Продлить" if is_valid else "♻️ Продлить", callback_data=f"renew_{lic.id}")]
-                kb.append(row)
+                if not is_valid:
+                    kb.append([InlineKeyboardButton("🔁 Продлить", callback_data=f"renew_{lic.id}")])
 
-                (active_licenses if is_valid else expired_licenses).append(lic)
-
-            if len(expired_licenses) == len(licenses):
+            if all_expired:
                 msg_lines.append("\n⚠️ Все лицензии просрочены. Продлите их, чтобы использовать.")
 
             msg = "\n".join(msg_lines)
