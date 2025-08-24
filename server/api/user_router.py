@@ -15,10 +15,11 @@ def get_db():
 
 
 @router.post("/register")
-def register_user(telegram_id: str, username: str | None = None, db: Session = Depends(get_db)):
+def register_user(telegram_id: str, db: Session = Depends(get_db)):
+    """Register a new user by Telegram ID."""
     user = user_service.get_user_by_telegram_id(db, telegram_id)
     if user:
-        return {"message": "👤 Пользователь уже существует", "id": user.id, "username": user.username}
+        return {"message": "👤 Пользователь уже существует", "id": user.id}
 
-    new_user = user_service.create_user(db, telegram_id, username)
-    return {"message": "✅ Пользователь зарегистрирован", "id": new_user.id, "username": new_user.username}
+    new_user = user_service.create_user(db, telegram_id)
+    return {"message": "✅ Пользователь зарегистрирован", "id": new_user.id}

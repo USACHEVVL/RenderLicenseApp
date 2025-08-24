@@ -100,7 +100,10 @@ async def pay_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_payment_proof(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     is_renewal = 'renew_license_id' in context.user_data
-    admin_msg = f"🧾 Новый платёж {'(продление)' if is_renewal else ''}\nОт: @{user.username or 'неизвестно'} (id: {user.id})"
+    admin_msg = (
+        f"🧾 Новый платёж {'(продление)' if is_renewal else ''}\n"
+        f"От: {user.full_name or 'неизвестно'} (id: {user.id})"
+    )
 
     button_callback = (
         f'confirm_renew_{context.user_data["renew_license_id"]}'
