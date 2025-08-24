@@ -16,12 +16,9 @@ with SessionLocal() as session:
     session.add(user)
     session.commit()
 
-    print("🔗 Привязываю лицензии...")
-    licenses = [
-        License(license_key=key, user_id=user.id)
-        for key in ("abc123", "def456")
-    ]
-    session.add_all(licenses)
+    print("🔗 Привязываю лицензию...")
+    license = License(license_key="abc123", user_id=user.id)
+    session.add(license)
     session.commit()
 
     print("✅ База данных успешно заполнена.")
