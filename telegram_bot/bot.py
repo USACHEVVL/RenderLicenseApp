@@ -49,39 +49,25 @@ async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(telegram_id=tg_id).first()
-        licenses = db.query(License).filter_by(user_id=user.id).all() if user else []
-        kb = []
+        license = db.query(License).filter_by(user_id=user.id).first() if user else None
 
-        if not licenses:
+        if not license:
             msg = "📭 У вас нет активных лицензий."
+            kb = [[InlineKeyboardButton("💳 Купить лицензию", callback_data='pay_license')]]
         else:
-            active_licenses = []
-            expired_licenses = []
-            msg_lines = ["🔐 Ваши лицензии:"]
-
             now = datetime.datetime.now()
+            is_valid = license.valid_until > now
+            days_left = (license.valid_until - now).days
+            status = f"{days_left} дн." if is_valid else "❌ Просрочена"
 
-            for lic in licenses:
-                is_valid = lic.valid_until > now
-                days_left = (lic.valid_until - now).days
-                status = f"{days_left} дн." if is_valid else "❌ Просрочена"
-
-                msg_lines.append(f"<code>{lic.license_key}</code> ({status})")
-
-                row = [InlineKeyboardButton("🔁 Продлить", callback_data=f"renew_{lic.id}")]
-                kb.append(row)
-
-                (active_licenses if is_valid else expired_licenses).append(lic)
-
-            if len(expired_licenses) == len(licenses):
-                msg_lines.append("\n⚠️ Все лицензии просрочены. Продлите их, чтобы использовать.")
-
+            msg_lines = ["🔐 Ваша лицензия:", f"<code>{license.license_key}</code> ({status})"]
+            if not is_valid:
+                msg_lines.append("\n⚠️ Лицензия просрочена. Продлите её, чтобы использовать.")
             msg = "\n".join(msg_lines)
 
-        kb.extend([
-            [InlineKeyboardButton("💳 Купить лицензию", callback_data='pay_license')],
-            [InlineKeyboardButton("🔙 Назад", callback_data='back_to_main')],
-        ])
+            kb = [[InlineKeyboardButton("🔁 Продлить лицензию", callback_data=f"renew_{license.id}")]]
+
+        kb.append([InlineKeyboardButton("🔙 Назад", callback_data='back_to_main')])
 
         await query.edit_message_text(msg, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb))
     finally:
