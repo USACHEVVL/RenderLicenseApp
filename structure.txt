@@ -9,7 +9,6 @@
 ./migrations/README
 ./structure.txt
 ./server
-./server/config.py
 ./server/api
 ./server/api/user_router.py
 ./server/api/license_router.py
@@ -35,8 +34,6 @@
 ./server/admin/routes.py
 ./server/admin/__init__.py
 ./maxscript
-./maxscript/config_loader.ms
-./maxscript/logger.ms
 ./maxscript/ui_interface.ms
 ./alembic.ini
 ./debug_seed.py
