@@ -116,6 +116,30 @@ buttontext:"Notifier"
         )
     )
 
+    fn renderLicense_escape str =
+    (
+        local res = substituteString str "\\" "\\\\"
+        res = substituteString res "\"" "\\\""
+        res = substituteString res "\n" "\\n"
+        res
+    )
+
+    fn renderLicense_sendLog license logText =
+    (
+        local escapedLog = renderLicense_escape logText
+        local url = "http://127.0.0.1:8000/api/render_notify"
+        local json = "{\\\"license_key\\\":\\\"" + license + "\\\",\\\"log\\\":\\\"" + escapedLog + "\\\"}"
+        
+        try (
+            local wc = dotNetObject "System.Net.WebClient"
+            wc.Headers.Add "Content-Type" "application/json"
+            wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
+            wc.UploadString url json
+        ) catch (
+            format "RenderLicense: failed to send log to server: %\n" (getCurrentException())
+        )
+    )
+
     fn getRenderViewName =
     (
         local cam = undefined
@@ -169,11 +193,16 @@ buttontext:"Notifier"
                     "🚀 Render start: " + startTime + "\n"
 
     messageBox logText title:"RenderLicenseApp"
+    renderLicense_sendLog license logText
 )
 
 
     fn renderLicense_onRenderEnd =
     (
+        local iniPath = getDir #userScripts + "\\render_license_config.ini"
+        local license = getINISetting iniPath "RenderLicense" "license_key"
+        if license == "" then return undefined
+
         local sceneName = if maxFileName != "" then maxFileName else "Untitled"
         local cameraName = getRenderViewName()
         local endTime = localTime as string
@@ -183,6 +212,7 @@ buttontext:"Notifier"
                         "⏰ Render finished: " + endTime + "\n"
 
         messageBox logText title:"RenderLicenseApp"
+        renderLicense_sendLog license logText
     )
 
     createDialog RenderNotifyRollout
