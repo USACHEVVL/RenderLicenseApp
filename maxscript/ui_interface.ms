@@ -20,7 +20,9 @@ buttontext:"Notifier"
             local cmd = "curl -s -o \"" + outputFile + "\" -w \"%{http_code}\" \"" + url + "\" > \"" + statusFile + "\""
             shellLaunch "cmd.exe" ("/C " + cmd)
 
-            sleep 0.5
+            -- wait for curl to finish writing files (max ~2 seconds)
+            for i = 1 to 20 while (not (doesFileExist statusFile)) do sleep 0.1
+            for i = 1 to 20 while (not (doesFileExist outputFile)) do sleep 0.1
 
             local httpCode = undefined
             if doesFileExist statusFile then
