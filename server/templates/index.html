@@ -42,23 +42,6 @@
   <a href="/admin/users" style="margin-left: 30px;">👤 Пользователи</a>
 </div>
 
-    <form method="get" action="/admin/" style="margin-bottom: 20px;">
-  <label for="status">Статус:</label>
-  <select name="status" id="status">
-    <option value="">Все</option>
-    <option value="active">Активные</option>
-    <option value="expired">Просроченные</option>
-  </select>
-
-  <label for="sort">Сортировка:</label>
-  <select name="sort" id="sort">
-    <option value="valid_until_asc">По сроку ↑</option>
-    <option value="valid_until_desc">По сроку ↓</option>
-  </select>
-
-  <button type="submit">Применить</button>
-</form>
-
 <h2>➕ Создать новую лицензию</h2>
 <form method="post" action="/admin/create" style="margin-bottom: 30px;">
     <label for="telegram_id">Telegram ID пользователя:</label>
@@ -117,7 +100,7 @@
                     <button type="submit">➕ 30 дн.</button>
                 </form>
                 {% endif %}
-            <td>
+            </td>
         </tr>
         {% endfor %}
     </table>
