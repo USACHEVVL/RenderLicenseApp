@@ -1,8 +1,13 @@
 .RECIPEPREFIX := >
-.PHONY: server bot
+
+.PHONY: server bot all
 
 server:
->uvicorn server.main:app --reload
+>python -m uvicorn server.main:app --reload
 
 bot:
 >python -m telegram_bot.bot
+
+all:
+>start powershell -NoExit -Command "make server"
+>start powershell -NoExit -Command "make bot"
