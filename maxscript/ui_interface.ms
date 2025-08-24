@@ -13,8 +13,6 @@ buttontext:"Notifier"
         label statusLabel "Checking license..." width:280
         checkbox notifyStart "Notify on render start"
 
-        button saveBtn "Save settings" width:280
-
         fn checkLicense key =
         (
             local url = "http://127.0.0.1:8000/api/check_license?license_key=" + key
@@ -84,14 +82,15 @@ buttontext:"Notifier"
         (
             statusLabel.text = "Checking..."
             checkLicense val
+
+            local iniPath = getDir #userScripts + "\\render_license_config.ini"
+            setINISetting iniPath "RenderLicense" "license_key" val
         )
 
-        fn saveSettings =
+        on notifyStart changed state do
         (
             local iniPath = getDir #userScripts + "\\render_license_config.ini"
-            setINISetting iniPath "RenderLicense" "license_key" licenseInput.text
-            setINISetting iniPath "RenderLicense" "notify_start" (if notifyStart.checked then "true" else "false")
-            messageBox ("✅ Settings saved!\n\nINI file:\n" + iniPath) title:"RenderLicenseApp"
+            setINISetting iniPath "RenderLicense" "notify_start" (if state then "true" else "false")
         )
 
         fn loadSettings =
@@ -104,8 +103,6 @@ buttontext:"Notifier"
                 checkLicense licenseInput.text
             )
         )
-
-        on saveBtn pressed do saveSettings()
 
         on RenderNotifyRollout open do
         (
