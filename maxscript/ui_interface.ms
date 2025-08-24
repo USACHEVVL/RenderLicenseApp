@@ -3,6 +3,10 @@ category:"RenderLicenseApp"
 tooltip:"Render Notifier"
 buttontext:"Notifier"
 (
+    global renderLicense_onRenderStart
+    global renderLicense_onRenderEnd
+    global getRenderViewName
+
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
         edittext licenseInput "License Key:" width:280
