@@ -116,7 +116,7 @@ buttontext:"Notifier"
         )
     )
 
-    fn renderLicense_escape str =
+     fn renderLicense_escape str =
     (
         local res = substituteString str "\\" "\\\\"
         res = substituteString res "\"" "\\\""
@@ -128,9 +128,16 @@ buttontext:"Notifier"
     (
         local escapedLog = renderLicense_escape logText
         local url = "http://127.0.0.1:8000/api/render_notify"
-        local data = "{\\\"license_key\\\":\\\"" + license + "\\\",\\\"log\\\":\\\"" + escapedLog + "\\\"}"
-        local cmd = "curl -s -X POST -H \\\"Content-Type: application/json\\\" -d \\\"" + data + "\\\" \\\"" + url + "\\\""
-        shellLaunch "cmd.exe" ("/C " + cmd)
+        local json = "{\\\"license_key\\\":\\\"" + license + "\\\",\\\"log\\\":\\\"" + escapedLog + "\\\"}"
+        
+        try (
+            local wc = dotNetObject "System.Net.WebClient"
+            wc.Headers.Add "Content-Type" "application/json"
+            wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
+            wc.UploadString url json
+        ) catch (
+            format "RenderLicense: failed to send log to server: %\n" (getCurrentException())
+        )
     )
 
     fn getRenderViewName =
