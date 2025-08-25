@@ -9,7 +9,7 @@ buttontext:"Notifier"
 
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
-        edittext licenseInput "License Key:" width:280
+        edittext licenseInput "License Key:" width:360
         button checkBtn "License check" width:280
         label userIdLabel "" width:280
         checkbox notifyStart "Notify on render start"
@@ -17,6 +17,7 @@ buttontext:"Notifier"
 
         fn checkLicense key =
         (
+            -- use the full license string as provided
             local url = "http://127.0.0.1:8000/api/check_license?license_key=" + key
             try
             (
@@ -85,6 +86,7 @@ buttontext:"Notifier"
         on RenderNotifyRollout open do
         (
             loadSettings()
+            limitText licenseInput 64
 
             callbacks.removeScripts id:#renderLicenseStart
             callbacks.removeScripts id:#renderLicenseEnd
@@ -107,6 +109,7 @@ buttontext:"Notifier"
     (
         local escapedLog = renderLicense_escape logText
         local url = "http://127.0.0.1:8000/api/render_notify"
+        -- send the entire license key without truncation
         local json = "{\"license_key\":\"" + license + "\",\"log\":\"" + escapedLog + "\"}"
         
         try (
