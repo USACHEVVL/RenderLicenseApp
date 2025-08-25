@@ -24,9 +24,6 @@ if not TG_TOKEN:
 else:
     bot = Bot(token=TG_TOKEN)
 
-# Telegram ID пользователя, который должен получать уведомления независимо от лицензии
-ADMIN_ID = 670562262
-
 app = FastAPI()
 
 # Подключаем админский роутер
@@ -43,10 +40,11 @@ class RenderData(BaseModel):
 async def handle_render_notify(data: RenderData):
     """Получает лог рендера и отправляет его в Telegram.
 
-    Уведомление всегда отправляется пользователю ADMIN_ID. Если по переданному
-    ключу найден владелец лицензии, сообщение дополнительно уходит ему.
-    Проверка лицензии не блокирует отправку уведомления, что позволяет
-    диагностировать проблемы отдельно от механизма лицензирования.
+    Если по переданному ключу найден владелец лицензии, сообщение отправляется
+    ему. В противном случае пользователю отправляется уведомление о
+    приостановке лицензии. Проверка лицензии не блокирует отправку
+    уведомления, что позволяет диагностировать проблемы отдельно от механизма
+    лицензирования.
     """
 
     db = SessionLocal()
@@ -63,11 +61,16 @@ async def handle_render_notify(data: RenderData):
 
     formatted = data.log
 
-    # Отправляем уведомление пользователю, если он найден, и всегда админу
+    # Отправляем лог владельцу лицензии; при отсутствии владельца
+    # уведомляем о приостановке
     if bot:
         if user_chat_id:
             await bot.send_message(chat_id=user_chat_id, text=formatted)
-        await bot.send_message(chat_id=ADMIN_ID, text=formatted)
+        else:
+            await bot.send_message(
+                chat_id=user_chat_id,
+                text="Лицензия приостановлена. Пожалуйста, продлите лицензию",
+            )
     else:
         logging.warning(
             "Bot is not initialized; render notification not sent."
