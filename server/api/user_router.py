@@ -15,7 +15,7 @@ def get_db():
 
 
 @router.post("/register")
-def register_user(telegram_id: str, db: Session = Depends(get_db)):
+def register_user(telegram_id: int, db: Session = Depends(get_db)):
     """Register a new user by Telegram ID."""
     user = user_service.get_user_by_telegram_id(db, telegram_id)
     if user:

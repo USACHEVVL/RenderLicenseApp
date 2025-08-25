@@ -45,7 +45,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    tg_id = str(update.effective_user.id)
+    tg_id = update.effective_user.id
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(telegram_id=tg_id).first()
@@ -119,9 +119,9 @@ async def grant_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = int(query.data.split("_")[-1])
     db = SessionLocal()
     try:
-        user = db.query(User).filter_by(telegram_id=str(user_id)).first()
+        user = db.query(User).filter_by(telegram_id=user_id).first()
         if not user:
-            user = User(telegram_id=str(user_id))
+            user = User(telegram_id=user_id)
             db.add(user)
             db.commit()
             db.refresh(user)
@@ -170,7 +170,7 @@ async def confirm_renew(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = db.query(User).filter_by(id=lic.user_id).first()
         if user:
             await context.bot.send_message(
-                chat_id=int(user.telegram_id),
+                chat_id=user.telegram_id,
                 text=f"✅ Лицензия <code>{lic.license_key}</code> успешно продлена на 30 дней.",
                 parse_mode="HTML"
             )
