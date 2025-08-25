@@ -196,7 +196,7 @@ buttontext:"Notifier"
         "📷 View: " + cameraName
 
     if notifyStart == "true" then (
-        messageBox logText title:"RenderLicenseApp"
+        -- messageBox logText title:"RenderLicenseApp"
         renderLicense_sendLog license logText
     )
 )
@@ -224,7 +224,7 @@ buttontext:"Notifier"
             "🖼 Scene: " + sceneName + "\n" +
             "📷 View: " + cameraName
 
-        messageBox logText title:"RenderLicenseApp"
+        -- messageBox logText title:"RenderLicenseApp"
         renderLicense_sendLog license logText
     )
 
