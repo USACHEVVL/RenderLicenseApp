@@ -199,7 +199,6 @@ buttontext:"Notifier"
     fn renderLicense_onRenderEnd =
     (
         local iniPath = getDir #userScripts + "\\render_license_config.ini"
-        local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
         local license = getINISetting iniPath "RenderLicense" "license_key"
         if license == "" do (
             messageBox "⚠️ License is missing. Logging without key." title:"RenderLicenseApp"
@@ -213,10 +212,8 @@ buttontext:"Notifier"
                         "📷 View: " + cameraName + "\n" +
                         "⏰ Render finished: " + endTime + "\n"
 
-        if notifyStart == "true" then (
-            messageBox logText title:"RenderLicenseApp"
-            renderLicense_sendLog license logText
-        )
+        messageBox logText title:"RenderLicenseApp"
+        renderLicense_sendLog license logText
     )
 
     createDialog RenderNotifyRollout
