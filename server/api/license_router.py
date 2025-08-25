@@ -13,7 +13,7 @@ def get_db():
         db.close()
 
 @router.post("/create_license")
-def create_license(telegram_id: str, license_key: str, db: Session = Depends(get_db)):
+def create_license(telegram_id: int, license_key: str, db: Session = Depends(get_db)):
     user = user_service.get_user_by_telegram_id(db, telegram_id)
     if not user:
         return {"error": "Пользователь не найден"}

@@ -8,6 +8,7 @@ from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
 from starlette.status import HTTP_303_SEE_OTHER
+from sqlalchemy import or_, cast, String
 
 admin_router = APIRouter()
 
@@ -25,8 +26,10 @@ def admin_dashboard(request: Request, status: str = "", sort: str = "", q: str =
     # --- ПОИСК ---
     if q:
         licenses_query = licenses_query.filter(
-            License.license_key.ilike(f"%{q}%") |
-            User.telegram_id.ilike(f"%{q}%")
+            or_(
+                License.license_key.ilike(f"%{q}%"),
+                cast(User.telegram_id, String).ilike(f"%{q}%")
+            )
         )
 
     # --- ФИЛЬТР ПО СТАТУСУ ---
@@ -128,7 +131,7 @@ def delete_user(user_id: int = Form(...)):
 
 
 @admin_router.post("/admin/create")
-def create_license(telegram_id: str = Form(...), days: int = Form(...)):
+def create_license(telegram_id: int = Form(...), days: int = Form(...)):
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(telegram_id=telegram_id).first()

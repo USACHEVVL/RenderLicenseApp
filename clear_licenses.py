@@ -4,7 +4,7 @@ from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
 
-TG_ID = "670562262"  # замените на нужный Telegram ID
+TG_ID = 670562262  # замените на нужный Telegram ID
 
 with SessionLocal() as db:
     user = db.query(User).filter_by(telegram_id=TG_ID).first()

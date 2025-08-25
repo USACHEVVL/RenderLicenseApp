@@ -10,7 +10,7 @@ db = SessionLocal()
 # Найдём первого пользователя или создадим тестового
 user = db.query(User).first()
 if not user:
-    user = User(telegram_id="999999")
+    user = User(telegram_id=999999)
     db.add(user)
     db.commit()
     db.refresh(user)
