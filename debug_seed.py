@@ -3,7 +3,7 @@ from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
 import datetime
-import hashlib
+import uuid
 
 db = SessionLocal()
 
@@ -16,7 +16,7 @@ if not user:
     db.refresh(user)
 
 # Генерируем ключ
-key = hashlib.sha256(f"{user.telegram_id}-expired".encode()).hexdigest()[:16]
+key = str(uuid.uuid4())
 
 # Создаём или обновляем лицензию с истёкшим сроком
 expired_license = db.query(License).filter_by(user_id=user.id).first()

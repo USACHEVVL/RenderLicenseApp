@@ -142,7 +142,7 @@ def create_license(telegram_id: int = Form(...), days: int = Form(...)):
             db.commit()
             db.refresh(user)
 
-        license_key = str(uuid.uuid4())[:16]  # Короткий ключ, можно заменить на другой формат
+        license_key = str(uuid.uuid4())
         valid_until = datetime.datetime.now() + datetime.timedelta(days=days)
 
         existing = db.query(License).filter_by(user_id=user.id).first()
