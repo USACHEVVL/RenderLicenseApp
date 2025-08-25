@@ -86,7 +86,7 @@ buttontext:"Notifier"
         on RenderNotifyRollout open do
         (
             loadSettings()
-            limitText licenseInput 64
+            licenseInput.limitText = 64
 
             callbacks.removeScripts id:#renderLicenseStart
             callbacks.removeScripts id:#renderLicenseEnd
