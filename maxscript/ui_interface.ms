@@ -173,11 +173,8 @@ buttontext:"Notifier"
     local license = getINISetting iniPath "RenderLicense" "license_key"
 
     if license == "" do (
-        messageBox "❌ License is missing. Render is unavailable." title:"RenderLicenseApp"
-        return undefined
+        messageBox "⚠️ License is missing. Logging without key." title:"RenderLicenseApp"
     )
-
-    if notifyStart != "true" then return undefined
 
     local sceneName
     if maxFileName != "" then
@@ -192,7 +189,7 @@ buttontext:"Notifier"
                     "📷 View: " + cameraName + "\n" +
                     "🚀 Render start: " + startTime + "\n"
 
-    messageBox logText title:"RenderLicenseApp"
+    if notifyStart == "true" do messageBox logText title:"RenderLicenseApp"
     renderLicense_sendLog license logText
 )
 
@@ -201,7 +198,9 @@ buttontext:"Notifier"
     (
         local iniPath = getDir #userScripts + "\\render_license_config.ini"
         local license = getINISetting iniPath "RenderLicense" "license_key"
-        if license == "" then return undefined
+        if license == "" do (
+            messageBox "⚠️ License is missing. Logging without key." title:"RenderLicenseApp"
+        )
 
         local sceneName = if maxFileName != "" then maxFileName else "Untitled"
         local cameraName = getRenderViewName()
