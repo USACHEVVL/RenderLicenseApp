@@ -1,6 +1,6 @@
 import os
 import asyncio
-import hashlib
+import uuid
 import datetime
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -126,7 +126,7 @@ async def grant_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.commit()
             db.refresh(user)
 
-        license_key = hashlib.sha256(f"{user_id}-{datetime.datetime.now()}".encode()).hexdigest()[:16]
+        license_key = str(uuid.uuid4())
         lic = db.query(License).filter_by(user_id=user.id).first()
         if lic:
             lic.license_key = license_key
