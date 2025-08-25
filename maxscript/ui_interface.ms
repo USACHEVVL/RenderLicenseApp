@@ -128,7 +128,7 @@ buttontext:"Notifier"
     (
         local escapedLog = renderLicense_escape logText
         local url = "http://127.0.0.1:8000/api/render_notify"
-        local json = "{\"license_key\":\"" + license + "\",\"log\":\"" + escapedLog + "\"}"
+        local json = format "{\"license_key\":\"%\",\"log\":\"%\"}" license escapedLog
         
         try (
             local wc = dotNetObject "System.Net.WebClient"
