@@ -9,7 +9,7 @@ buttontext:"Notifier"
 
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
-        edittext licenseInput "License Key:" width:360
+        edittext licenseInput "License Key:" width:360 limitText:36
         button checkBtn "License check" width:280
         label userIdLabel "" width:280
         checkbox notifyStart "Notify on render start"
@@ -86,7 +86,6 @@ buttontext:"Notifier"
         on RenderNotifyRollout open do
         (
             loadSettings()
-            licenseInput.limitText = 64
 
             callbacks.removeScripts id:#renderLicenseStart
             callbacks.removeScripts id:#renderLicenseEnd
