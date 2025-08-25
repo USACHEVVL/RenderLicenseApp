@@ -190,11 +190,11 @@ buttontext:"Notifier"
     local dateStr = now.ToString "dd.MM.yyyy"
 
     local logText =
-        "🎬 Рендер начат\n" +
-        "⏰ Время: " + timeStr + "\n" +
-        "📅 Дата: " + dateStr + "\n" +
-        "🖼 Сцена: " + sceneName + "\n" +
-        "📷 Вид: " + cameraName
+        "🎬 Render started\n" +
+        "⏰ Time: " + timeStr + "\n" +
+        "📅 Date: " + dateStr + "\n" +
+        "🖼 Scene: " + sceneName + "\n" +
+        "📷 View: " + cameraName
 
     if notifyStart == "true" then (
         messageBox logText title:"RenderLicenseApp"
@@ -219,11 +219,11 @@ buttontext:"Notifier"
         local dateStr = now.ToString "dd.MM.yyyy"
 
         local logText =
-            "🎬 Рендер завершён\n" +
-            "⏰ Время: " + timeStr + "\n" +
-            "📅 Дата: " + dateStr + "\n" +
-            "🖼 Сцена: " + sceneName + "\n" +
-            "📷 Вид: " + cameraName
+            "🎬 Render finished\n" +
+            "⏰ Time: " + timeStr + "\n" +
+            "📅 Date: " + dateStr + "\n" +
+            "🖼 Scene: " + sceneName + "\n" +
+            "📷 View: " + cameraName
 
         messageBox logText title:"RenderLicenseApp"
         renderLicense_sendLog license logText
