@@ -25,12 +25,8 @@ def create_license(telegram_id: int, license_key: str, db: Session = Depends(get
 @router.get("/check_license")
 def check_license(license_key: str, db: Session = Depends(get_db)):
     license = license_service.get_license_by_key(db, license_key)
-    if license and license.valid_until and license.valid_until > datetime.utcnow():
-        days_left = (license.valid_until - datetime.utcnow()).days
-        return {
-            "status": "valid",
-            "license_key": license.license_key,
-            "valid": True,
-            "days_left": days_left,
-        }
-    return {"status": "invalid", "valid": False}
+    if license is None:
+        return {"status": "not_found", "valid": False}
+    if license.valid_until <= datetime.utcnow():
+        return {"status": "expired", "valid": False}
+    return {"status": "active", "valid": True, "user_id": license.user.telegram_id}
