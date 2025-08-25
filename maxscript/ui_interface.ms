@@ -184,11 +184,17 @@ buttontext:"Notifier"
         sceneName = "Untitled"
 
     local cameraName = getRenderViewName()
-    local startTime = localTime as string
 
-    local logText = "🖼 Scene: " + sceneName + "\n" +
-                    "📷 View: " + cameraName + "\n" +
-                    "🚀 Render start: " + startTime + "\n"
+    local now = (dotNetClass "System.DateTime").Now
+    local timeStr = now.ToString "HH:mm:ss"
+    local dateStr = now.ToString "dd.MM.yyyy"
+
+    local logText =
+        "🎬 Рендер начат\n" +
+        "⏰ Время: " + timeStr + "\n" +
+        "📅 Дата: " + dateStr + "\n" +
+        "🖼 Сцена: " + sceneName + "\n" +
+        "📷 Вид: " + cameraName
 
     if notifyStart == "true" then (
         messageBox logText title:"RenderLicenseApp"
@@ -207,11 +213,17 @@ buttontext:"Notifier"
 
         local sceneName = if maxFileName != "" then maxFileName else "Untitled"
         local cameraName = getRenderViewName()
-        local endTime = localTime as string
 
-        local logText = "🖼 Scene: " + sceneName + "\n" +
-                        "📷 View: " + cameraName + "\n" +
-                        "⏰ Render finished: " + endTime + "\n"
+        local now = (dotNetClass "System.DateTime").Now
+        local timeStr = now.ToString "HH:mm:ss"
+        local dateStr = now.ToString "dd.MM.yyyy"
+
+        local logText =
+            "🎬 Рендер завершён\n" +
+            "⏰ Время: " + timeStr + "\n" +
+            "📅 Дата: " + dateStr + "\n" +
+            "🖼 Сцена: " + sceneName + "\n" +
+            "📷 Вид: " + cameraName
 
         messageBox logText title:"RenderLicenseApp"
         renderLicense_sendLog license logText
