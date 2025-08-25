@@ -129,13 +129,12 @@ buttontext:"Notifier"
         local escapedLog = renderLicense_escape logText
         local url = "http://127.0.0.1:8000/api/render_notify"
         local json = "{\"license_key\":\"" + license + "\",\"log\":\"" + escapedLog + "\"}"
-        local netJson = dotNetObject "System.String" json
         
         try (
             local wc = dotNetObject "System.Net.WebClient"
-            wc.Headers.Add "Content-Type" "application/json"
+            wc.Headers.Add "Content-Type" "application/json; charset=utf-8"
             wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
-            wc.UploadString url netJson
+            wc.UploadData url "POST" ((dotNetClass "System.Text.Encoding").UTF8.GetBytes json)
         ) catch (
             format "RenderLicense: failed to send log to server: %\n" (getCurrentException())
         )
