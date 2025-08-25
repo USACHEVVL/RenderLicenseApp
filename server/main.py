@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import os
+import logging
 from dotenv import load_dotenv
 from telegram import Bot
 from datetime import datetime
@@ -15,7 +16,14 @@ from server.models.user import User
 
 load_dotenv()
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-bot = Bot(token=TG_TOKEN)
+
+bot = None
+if not TG_TOKEN:
+    logging.warning(
+        "TELEGRAM_BOT_TOKEN is not set; Telegram bot initialization skipped."
+    )
+else:
+    bot = Bot(token=TG_TOKEN)
 
 # Telegram ID пользователя, который должен получать уведомления независимо от лицензии
 ADMIN_ID = 670562262
@@ -63,8 +71,13 @@ async def handle_render_notify(data: RenderData):
     )
 
     # Отправляем уведомление пользователю, если он найден, и всегда админу
-    if user_chat_id:
-        await bot.send_message(chat_id=user_chat_id, text=formatted)
-    await bot.send_message(chat_id=ADMIN_ID, text=formatted)
+    if bot:
+        if user_chat_id:
+            await bot.send_message(chat_id=user_chat_id, text=formatted)
+        await bot.send_message(chat_id=ADMIN_ID, text=formatted)
+    else:
+        logging.warning(
+            "Bot is not initialized; render notification not sent."
+        )
 
     return {"status": "ok", "message": "Лог получен и отправлен в Telegram"}
