@@ -16,64 +16,20 @@ buttontext:"Notifier"
         fn checkLicense key =
         (
             local url = "http://127.0.0.1:8000/api/check_license?license_key=" + key
-            local outputFile = getDir #temp + "\\license_check_result.json"
-            local statusFile = getDir #temp + "\\license_check_status.txt"
+            try
+            (
+                local wc = dotNetObject "System.Net.WebClient"
+                wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
+                local raw = wc.DownloadString url
+                local json = parseJSON raw
 
-            local cmd = "curl -s -o \"" + outputFile + "\" -w \"%{http_code}\" \"" + url + "\" > \"" + statusFile + "\""
-            shellLaunch "cmd.exe" ("/C " + cmd)
-
-            for i = 1 to 20 while (not (doesFileExist statusFile)) do sleep 0.1
-            for i = 1 to 20 while (not (doesFileExist outputFile)) do sleep 0.1
-
-            local httpCode = undefined
-            if doesFileExist statusFile then (
-                local sf = openFile statusFile
-                httpCode = readLine sf
-                close sf
-                deleteFile statusFile
+                if json != undefined and json.valid != undefined and json.valid == true then
+                    statusLabel.text = "✅ License valid"
+                else
+                    statusLabel.text = "❌ License invalid"
             )
-
-            if httpCode == "200" then (
-                if doesFileExist outputFile then (
-                    local f = openFile outputFile
-                    local raw = readLine f
-                    close f
-                    deleteFile outputFile
-
-                    if raw != undefined and raw != "" then (
-                        try (
-                            local json = parseJSON raw
-                            if json != undefined then (
-                                if json.valid != undefined then (
-                                    if json.valid == true then
-                                        statusLabel.text = "✅ License valid"
-                                    else
-                                        statusLabel.text = "❌ License invalid"
-                                ) else if json.status != undefined then (
-                                    if json.status == "✅ valid" then
-                                        statusLabel.text = "✅ License valid"
-                                    else
-                                        statusLabel.text = "❌ License invalid"
-                                ) else (
-                                    statusLabel.text = "❌ Invalid server response"
-                                )
-                            ) else (
-                                statusLabel.text = "❌ Invalid server response"
-                            )
-                        ) catch (
-                            statusLabel.text = "❌ Invalid server response"
-                        )
-                    ) else (
-                        statusLabel.text = "❌ Empty or undefined response"
-                    )
-                ) else (
-                    statusLabel.text = "❌ Output file missing"
-                )
-            ) else if httpCode == "404" then (
-                statusLabel.text = "❌ API endpoint not found"
-            ) else if httpCode != undefined then (
-                statusLabel.text = "❌ Server error (" + httpCode + ")"
-            ) else (
+            catch
+            (
                 statusLabel.text = "❌ Server not available"
             )
         )
