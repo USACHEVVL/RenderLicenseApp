@@ -4,7 +4,6 @@ import os
 import logging
 from dotenv import load_dotenv
 from telegram import Bot
-from datetime import datetime
 
 from server.admin.routes import admin_router
 from server.api import license_router
@@ -62,13 +61,7 @@ async def handle_render_notify(data: RenderData):
     finally:
         db.close()
 
-    now = datetime.now()
-    formatted = (
-        "🎬 Рендер завершён\n"
-        f"🕒 Время: {now.strftime('%H:%M')}\n"
-        f"📅 Дата: {now.strftime('%d.%m.%Y')}\n"
-        f"📝 Лог: {data.log}"
-    )
+    formatted = data.log
 
     # Отправляем уведомление пользователю, если он найден, и всегда админу
     if bot:
