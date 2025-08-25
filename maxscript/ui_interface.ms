@@ -10,8 +10,10 @@ buttontext:"Notifier"
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
         edittext licenseInput "License Key:" width:280
-        label statusLabel "Checking license..." width:280
+        button checkBtn "License check" width:280
+        label userIdLabel "" width:280
         checkbox notifyStart "Notify on render start"
+        label statusLabel "Checking license..." width:280
 
         fn checkLicense key =
         (
@@ -24,26 +26,42 @@ buttontext:"Notifier"
 
                 local json = undefined
                 try json = parseJSON raw catch()
-                if json != undefined then (
-                    if isProperty json #valid and json.valid == true then
-                        statusLabel.text = "✅ License valid"
-                    else
-                        statusLabel.text = "❌ License invalid"
-                ) else (
-                    statusLabel.text = "❌ Invalid server response"
+                if json != undefined and isProperty json #status then (
+                    case json.status of
+                    (
+                        "active": (
+                            messageBox "✅ License active"
+                            userIdLabel.text = "ID: " + json.user_id
+                        )
+                        "not_found": (
+                            messageBox "❌ License not found"
+                            userIdLabel.text = ""
+                        )
+                        "expired": (
+                            messageBox "⏳ License expired"
+                            userIdLabel.text = ""
+                        )
+                        default:
+                        (
+                            messageBox "❌ Invalid server response"
+                            userIdLabel.text = ""
+                        )
+                    )
+                )
+                else (
+                    messageBox "❌ Invalid server response"
+                    userIdLabel.text = ""
                 )
             )
             catch
             (
-                statusLabel.text = "❌ Server not available"
+                messageBox "🌐❌ No connection to server"
+                userIdLabel.text = ""
             )
         )
 
         on licenseInput entered val do
         (
-            statusLabel.text = "Checking..."
-            checkLicense val
-
             local iniPath = getDir #userScripts + "\\render_license_config.ini"
             setINISetting iniPath "RenderLicense" "license_key" val
         )
@@ -60,7 +78,6 @@ buttontext:"Notifier"
             licenseInput.text = getINISetting iniPath "RenderLicense" "license_key"
             notifyStart.checked = (getINISetting iniPath "RenderLicense" "notify_start") == "true"
             if licenseInput.text != "" then (
-                statusLabel.text = "Checking..."
                 checkLicense licenseInput.text
             )
         )
@@ -75,6 +92,7 @@ buttontext:"Notifier"
             callbacks.addScript #preRender "if (::renderLicense_onRenderStart != undefined) then ::renderLicense_onRenderStart()" id:#renderLicenseStart
             callbacks.addScript #postRender "if (::renderLicense_onRenderEnd != undefined) then ::renderLicense_onRenderEnd()" id:#renderLicenseEnd
         )
+        on checkBtn pressed do checkLicense licenseInput.text
     )
 
      fn renderLicense_escape str =
