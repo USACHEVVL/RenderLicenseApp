@@ -21,12 +21,17 @@ buttontext:"Notifier"
                 local wc = dotNetObject "System.Net.WebClient"
                 wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
                 local raw = wc.DownloadString url
-                local json = parseJSON raw
 
-                if json != undefined and json.valid != undefined and json.valid == true then
-                    statusLabel.text = "✅ License valid"
-                else
-                    statusLabel.text = "❌ License invalid"
+                local json = undefined
+                try json = parseJSON raw catch()
+                if json != undefined then (
+                    if isProperty json #valid and json.valid == true then
+                        statusLabel.text = "✅ License valid"
+                    else
+                        statusLabel.text = "❌ License invalid"
+                ) else (
+                    statusLabel.text = "❌ Invalid server response"
+                )
             )
             catch
             (
