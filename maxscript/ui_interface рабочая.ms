@@ -3,9 +3,9 @@ category:"RenderLicenseApp"
 tooltip:"Render Notifier"
 buttontext:"Notifier"
 (
-    global renderLicense_onRenderStart
-    global renderLicense_onRenderEnd
-    global getRenderViewName
+    renderLicense_onRenderStart = undefined
+    renderLicense_onRenderEnd = undefined
+    getRenderViewName = undefined
 
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
@@ -25,51 +25,81 @@ buttontext:"Notifier"
                 local raw = wc.DownloadString url
 
                 try (
-                    dotNet.loadAssembly "Newtonsoft.Json.dll"
+                    local jsonPath = getFilenamePath (getSourceFileName()) + "Newtonsoft.Json.dll"
+                    if doesFileExist jsonPath then (
+                        dotNet.loadAssembly jsonPath
+                    ) else (
+                        messageBox "❌ Newtonsoft.Json.dll not found" title:"RenderLicenseApp"
+                        userIdLabel.text = ""
+                        return undefined
+                    )
                 ) catch (
-                    messageBox "❌ Missing dependency: Newtonsoft.Json.dll" title:"RenderLicenseApp"
+                    messageBox "❌ Ошибка загрузки Newtonsoft.Json.dll" title:"RenderLicenseApp"
                     userIdLabel.text = ""
                     return undefined
                 )
 
+                print raw
+
                 local json = (dotNetClass "Newtonsoft.Json.JsonConvert").DeserializeObject raw
-                if json != undefined then (
-                    local status = (json.Item["status"] as string)
-                    case status of (
-                        "active": (messageBox "✅ License active"; userIdLabel.text = "ID: " + (json.Item["user_id"] as string))
-                        "not_found": (messageBox "❌ License not found"; userIdLabel.text = "")
-                        "expired": (messageBox "⏳ License expired"; userIdLabel.text = "")
-                        default: (messageBox "❌ Invalid server response"; userIdLabel.text = "")
-                    )
-                )
-                else (
-                    messageBox "❌ Invalid server response"
-                    userIdLabel.text = ""
-                )
+if json != undefined and json.ContainsKey "status" then (
+    local statusToken = json.Item["status"]
+    local status = statusToken.ToString()
+    format "Parsed status: %
+" status
+
+    case status of (
+    "active": (
+        messageBox "✅ License active"
+        if (json.ContainsKey "user_id") and (json.ContainsKey "days_left") do (
+            local userId = json.Item["user_id"]
+            local daysLeft = json.Item["days_left"]
+			userIdLabel.text = "ID: " + userId.ToString() + " (" + daysLeft.ToString() + " days left)"
+        )
+        statusLabel.text = "✅ License is active"
+    )
+    "not_found": (
+        messageBox "❌ License not found"
+        userIdLabel.text = ""
+        statusLabel.text = "❌ License not found"
+    )
+    "expired": (
+        messageBox "⏳ License expired"
+        userIdLabel.text = ""
+        statusLabel.text = "⏳ License expired"
+    )
+    default: (
+        messageBox "❌ Invalid server response"
+        userIdLabel.text = ""
+        statusLabel.text = "❌ Invalid response"
+    )
+)
+
+) else (
+    messageBox "❌ Invalid server response"
+    userIdLabel.text = ""
+)
             )
             catch (
-                (
+                try (
+                    local ex = getCurrentException()
+                    local exType = "Unknown"
                     try (
-                        local ex = getCurrentException()
-                        local exType = "Unknown"
-                        try (
-                            if ex != undefined then (
-                                local dotType = ex.GetType()
-                                exType = dotType.Name
-                            )
-                        ) catch (
-                            exType = "Unknown"
+                        if ex != undefined then (
+                            local dotType = ex.GetType()
+                            exType = dotType.Name
                         )
+                    ) catch ()
 
-                        if exType == "System.Net.WebException" then
-                            messageBox "🌐❌ No connection to server"
-                        else (
-                            format "Exception: %\n" ex
-                            messageBox "Unknown error"
-                        )
-                    ) catch (
-                        messageBox "❌ Critical error during license check"
+                    if exType == "System.Net.WebException" then
+                        messageBox "🌐❌ No connection to server"
+                    else (
+                        format "Exception: %\n" ex
+                        messageBox ("Unknown error:\n" + ex.ToString())
+                        statusLabel.text = "Error: " + ex.Message
                     )
+                ) catch (
+                    messageBox "❌ Critical error during license check"
                 )
             )
         )
@@ -125,7 +155,7 @@ buttontext:"Notifier"
         local escapedLog = renderLicense_escape logText
         local url = "http://127.0.0.1:8000/api/render_notify"
         local json = "{\"license_key\":\"" + license + "\",\"log\":\"" + escapedLog + "\"}"
-        
+
         try (
             local wc = dotNetObject "System.Net.WebClient"
             wc.Headers.Add "Content-Type" "application/json; charset=utf-8"
