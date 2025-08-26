@@ -9,7 +9,7 @@ buttontext:"Notifier"
 
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
-        edittext licenseInput "License Key:" width:360 limitText:36
+        edittext licenseInput "License Key:" width:280 limitText:36
         button checkBtn "License check" width:280
         label userIdLabel "" width:280
         checkbox notifyStart "Notify on render start"
@@ -26,7 +26,7 @@ buttontext:"Notifier"
                 local raw = wc.DownloadString url
 
                 local json = (dotNetClass "Newtonsoft.Json.JsonConvert").DeserializeObject raw
-                if json != undefined do (
+                if json != undefined then (
                     local status = (json.Item["status"] as string)
                     case status of (
                         "active": (messageBox "✅ License active"; userIdLabel.text = "ID: " + (json.Item["user_id"] as string))
