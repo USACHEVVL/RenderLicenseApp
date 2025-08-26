@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import os
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Bot
 
@@ -40,11 +41,10 @@ class RenderData(BaseModel):
 async def handle_render_notify(data: RenderData):
     """Получает лог рендера и отправляет его в Telegram.
 
-    Если по переданному ключу найден владелец лицензии, сообщение отправляется
-    ему. В противном случае пользователю отправляется уведомление о
-    приостановке лицензии. Проверка лицензии не блокирует отправку
-    уведомления, что позволяет диагностировать проблемы отдельно от механизма
-    лицензирования.
+    Если по переданному ключу найден владелец активной лицензии, сообщение
+    отправляется ему. В противном случае отправка пропускается. Проверка
+    лицензии не блокирует отправку уведомления, что позволяет диагностировать
+    проблемы отдельно от механизма лицензирования.
     """
 
     db = SessionLocal()
@@ -52,25 +52,31 @@ async def handle_render_notify(data: RenderData):
 
     try:
         license = db.query(License).filter_by(license_key=data.license_key).first()
-        if license:
+        if (
+            license
+            and license.valid_until
+            and license.valid_until > datetime.utcnow()
+        ):
             user = db.query(User).filter_by(id=license.user_id).first()
             if user:
                 user_chat_id = user.telegram_id
+        else:
+            logging.info(
+                "Inactive or missing license for key %s; skipping notification",
+                data.license_key,
+            )
     finally:
         db.close()
 
     formatted = data.log
 
-    # Отправляем лог владельцу лицензии; при отсутствии владельца
-    # уведомляем о приостановке
-    if bot:
-        if user_chat_id:
-            await bot.send_message(chat_id=user_chat_id, text=formatted)
-        else:
-            await bot.send_message(
-                chat_id=user_chat_id,
-                text="Лицензия приостановлена. Пожалуйста, продлите лицензию",
-            )
+    # Отправляем лог владельцу лицензии только при активной лицензии и наличии chat_id
+    if bot and user_chat_id:
+        await bot.send_message(chat_id=user_chat_id, text=formatted)
+    elif bot:
+        logging.info(
+            "Telegram message skipped: no active license or user chat ID."
+        )
     else:
         logging.warning(
             "Bot is not initialized; render notification not sent."
