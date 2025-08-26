@@ -48,14 +48,15 @@ buttontext:"Notifier"
                     userIdLabel.text = ""
                 )
             )
-            catch ex do (
-    if (ex.GetType().Name == "System.Net.WebException") then
-        messageBox "🌐❌ No connection to server"
-    else (
-        format "Exception: %\n" ex
-        messageBox "Unknown error"
-    )
-)
+            catch (
+                local ex = getCurrentException()
+                if (ex != undefined and ex.GetType().Name == "System.Net.WebException") then
+                    messageBox "🌐❌ No connection to server"
+                else (
+                    format "Exception: %\n" ex
+                    messageBox "Unknown error"
+                )
+            )
 
         )
 
