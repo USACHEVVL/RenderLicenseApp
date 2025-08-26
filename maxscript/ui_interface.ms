@@ -17,7 +17,6 @@ buttontext:"Notifier"
 
         fn checkLicense key =
         (
-            -- use the full license string as provided
             local url = "http://127.0.0.1:8000/api/check_license?license_key=" + key
             try
             (
@@ -49,16 +48,30 @@ buttontext:"Notifier"
                 )
             )
             catch (
-                local ex = getCurrentException()
-                local exType = if ex != undefined then ex.GetType().Name else ""
-                if exType == "System.Net.WebException" then
-                    messageBox "🌐❌ No connection to server"
-                else (
-                    format "Exception: %\n" ex
-                    messageBox "Unknown error"
+                (
+                    try (
+                        local ex = getCurrentException()
+                        local exType = "Unknown"
+                        try (
+                            if ex != undefined then (
+                                local dotType = ex.GetType()
+                                exType = dotType.Name
+                            )
+                        ) catch (
+                            exType = "Unknown"
+                        )
+
+                        if exType == "System.Net.WebException" then
+                            messageBox "🌐❌ No connection to server"
+                        else (
+                            format "Exception: %\n" ex
+                            messageBox "Unknown error"
+                        )
+                    ) catch (
+                        messageBox "❌ Critical error during license check"
+                    )
                 )
             )
-
         )
 
         on licenseInput entered val do
@@ -93,10 +106,13 @@ buttontext:"Notifier"
             callbacks.addScript #preRender "if (::renderLicense_onRenderStart != undefined) then ::renderLicense_onRenderStart()" id:#renderLicenseStart
             callbacks.addScript #postRender "if (::renderLicense_onRenderEnd != undefined) then ::renderLicense_onRenderEnd()" id:#renderLicenseEnd
         )
-        on checkBtn pressed do checkLicense licenseInput.text
+
+        on checkBtn pressed do (
+            checkLicense licenseInput.text
+        )
     )
 
-     fn renderLicense_escape str =
+    fn renderLicense_escape str =
     (
         local res = substituteString str "\\" "\\\\"
         res = substituteString res "\"" "\\\""
@@ -108,7 +124,6 @@ buttontext:"Notifier"
     (
         local escapedLog = renderLicense_escape logText
         local url = "http://127.0.0.1:8000/api/render_notify"
-        -- send the entire license key without truncation
         local json = "{\"license_key\":\"" + license + "\",\"log\":\"" + escapedLog + "\"}"
         
         try (
@@ -148,40 +163,38 @@ buttontext:"Notifier"
     )
 
     fn renderLicense_onRenderStart =
-(
-    local iniPath = getDir #userScripts + "\\render_license_config.ini"
-    local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
-    local license = getINISetting iniPath "RenderLicense" "license_key"
+    (
+        local iniPath = getDir #userScripts + "\\render_license_config.ini"
+        local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
+        local license = getINISetting iniPath "RenderLicense" "license_key"
 
-    if license == "" do (
-        messageBox "⚠️ License is missing. Logging without key." title:"RenderLicenseApp"
+        if license == "" do (
+            messageBox "⚠️ License is missing. Logging without key." title:"RenderLicenseApp"
+        )
+
+        local sceneName
+        if maxFileName != "" then
+            sceneName = maxFileName
+        else
+            sceneName = "Untitled"
+
+        local cameraName = getRenderViewName()
+
+        local now = (dotNetClass "System.DateTime").Now
+        local timeStr = now.ToString "HH:mm:ss"
+        local dateStr = now.ToString "dd.MM.yyyy"
+
+        local logText =
+            "🎬 Render started\n" +
+            "⏰ Time: " + timeStr + "\n" +
+            "🗕 Date: " + dateStr + "\n" +
+            "🗜 Scene: " + sceneName + "\n" +
+            "📷 View: " + cameraName
+
+        if notifyStart == "true" then (
+            renderLicense_sendLog license logText
+        )
     )
-
-    local sceneName
-    if maxFileName != "" then
-        sceneName = maxFileName
-    else
-        sceneName = "Untitled"
-
-    local cameraName = getRenderViewName()
-
-    local now = (dotNetClass "System.DateTime").Now
-    local timeStr = now.ToString "HH:mm:ss"
-    local dateStr = now.ToString "dd.MM.yyyy"
-
-    local logText =
-        "🎬 Render started\n" +
-        "⏰ Time: " + timeStr + "\n" +
-        "📅 Date: " + dateStr + "\n" +
-        "🖼 Scene: " + sceneName + "\n" +
-        "📷 View: " + cameraName
-
-    if notifyStart == "true" then (
-        -- messageBox logText title:"RenderLicenseApp"
-        renderLicense_sendLog license logText
-    )
-)
-
 
     fn renderLicense_onRenderEnd =
     (
@@ -201,11 +214,10 @@ buttontext:"Notifier"
         local logText =
             "🎬 Render finished\n" +
             "⏰ Time: " + timeStr + "\n" +
-            "📅 Date: " + dateStr + "\n" +
-            "🖼 Scene: " + sceneName + "\n" +
+            "🗕 Date: " + dateStr + "\n" +
+            "🗜 Scene: " + sceneName + "\n" +
             "📷 View: " + cameraName
 
-        -- messageBox logText title:"RenderLicenseApp"
         renderLicense_sendLog license logText
     )
 
