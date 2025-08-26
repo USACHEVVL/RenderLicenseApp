@@ -4,6 +4,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from telegram import Bot
+from telegram_bot.bot import ADMIN_ID
 
 from server.admin.routes import admin_router
 from server.api import license_router
@@ -68,7 +69,7 @@ async def handle_render_notify(data: RenderData):
             await bot.send_message(chat_id=user_chat_id, text=formatted)
         else:
             await bot.send_message(
-                chat_id=user_chat_id,
+                chat_id=ADMIN_ID,
                 text="Лицензия приостановлена. Пожалуйста, продлите лицензию",
             )
     else:
