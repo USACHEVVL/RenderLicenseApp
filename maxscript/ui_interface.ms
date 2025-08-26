@@ -48,20 +48,15 @@ buttontext:"Notifier"
                     userIdLabel.text = ""
                 )
             )
-            catch
-            (
-                local ex = getCurrentException()
-                format "checkLicense exception: %\n" ex
-                if (ex.GetType().Name == "WebException") then
-                (
-                    messageBox "🌐❌ No connection to server"
-                )
-                else
-                (
-                    messageBox "❌ Invalid server response"
-                )
-                userIdLabel.text = ""
-            )
+            catch ex do (
+    if (ex.GetType().Name == "System.Net.WebException") then
+        messageBox "🌐❌ No connection to server"
+    else (
+        format "Exception: %\n" ex
+        messageBox "Unknown error"
+    )
+)
+
         )
 
         on licenseInput entered val do
