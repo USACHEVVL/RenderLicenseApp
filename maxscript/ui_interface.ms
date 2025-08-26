@@ -42,7 +42,16 @@ buttontext:"Notifier"
             )
             catch
             (
-                messageBox "🌐❌ No connection to server"
+                local ex = getCurrentException()
+                format "checkLicense exception: %\n" ex
+                if (ex.GetType().Name == "WebException") then
+                (
+                    messageBox "🌐❌ No connection to server"
+                )
+                else
+                (
+                    messageBox "❌ Invalid server response"
+                )
                 userIdLabel.text = ""
             )
         )
