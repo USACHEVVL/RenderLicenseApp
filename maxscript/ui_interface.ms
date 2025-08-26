@@ -25,6 +25,14 @@ buttontext:"Notifier"
                 wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
                 local raw = wc.DownloadString url
 
+                try (
+                    dotNet.loadAssembly "Newtonsoft.Json.dll"
+                ) catch (
+                    messageBox "❌ Missing dependency: Newtonsoft.Json.dll" title:"RenderLicenseApp"
+                    userIdLabel.text = ""
+                    return undefined
+                )
+
                 local json = (dotNetClass "Newtonsoft.Json.JsonConvert").DeserializeObject raw
                 if json != undefined then (
                     local status = (json.Item["status"] as string)
