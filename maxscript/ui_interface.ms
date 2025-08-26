@@ -25,28 +25,14 @@ buttontext:"Notifier"
                 wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
                 local raw = wc.DownloadString url
 
-                local json = undefined
-                try json = parseJSON raw catch()
-                if json != undefined and isProperty json #status then (
-                    case json.status of
-                    (
-                        "active": (
-                            messageBox "✅ License active"
-                            userIdLabel.text = "ID: " + json.user_id
-                        )
-                        "not_found": (
-                            messageBox "❌ License not found"
-                            userIdLabel.text = ""
-                        )
-                        "expired": (
-                            messageBox "⏳ License expired"
-                            userIdLabel.text = ""
-                        )
-                        default:
-                        (
-                            messageBox "❌ Invalid server response"
-                            userIdLabel.text = ""
-                        )
+                local json = (dotNetClass "Newtonsoft.Json.JsonConvert").DeserializeObject raw
+                if json != undefined do (
+                    local status = (json.Item["status"] as string)
+                    case status of (
+                        "active": (messageBox "✅ License active"; userIdLabel.text = "ID: " + (json.Item["user_id"] as string))
+                        "not_found": (messageBox "❌ License not found"; userIdLabel.text = "")
+                        "expired": (messageBox "⏳ License expired"; userIdLabel.text = "")
+                        default: (messageBox "❌ Invalid server response"; userIdLabel.text = "")
                     )
                 )
                 else (
