@@ -150,6 +150,55 @@ if json != undefined and json.ContainsKey "status" then (
         res
     )
 
+    fn licenseIsActive key =
+    (
+        if key == "" then (
+            RenderNotifyRollout.statusLabel.text = "⚠️ License missing"
+            return false
+        )
+
+        local url = "http://127.0.0.1:8000/api/check_license?license_key=" + key
+        try (
+            try (
+                dotNet.loadAssembly (getFilenamePath (getSourceFileName()) + "Newtonsoft.Json.dll")
+            ) catch ()
+
+            local wc = dotNetObject "System.Net.WebClient"
+            wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
+            local raw = wc.DownloadString url
+
+            local json = (dotNetClass "Newtonsoft.Json.JsonConvert").DeserializeObject raw
+            if json != undefined and json.ContainsKey "status" then (
+                local status = json.Item["status"].ToString()
+                case status of (
+                    "active": (
+                        if (json.ContainsKey "user_id") and (json.ContainsKey "days_left") do (
+                            local userId = json.Item["user_id"]
+                            local daysLeft = json.Item["days_left"]
+                            RenderNotifyRollout.userIdLabel.text = "ID: " + userId.ToString() + " (" + daysLeft.ToString() + " days left)"
+                        )
+                        RenderNotifyRollout.statusLabel.text = "✅ License is active"
+                        return true
+                    )
+                    "expired": (
+                        RenderNotifyRollout.statusLabel.text = "⏳ License expired"
+                    )
+                    "not_found": (
+                        RenderNotifyRollout.statusLabel.text = "❌ License not found"
+                    )
+                    default: (
+                        RenderNotifyRollout.statusLabel.text = "❌ Invalid response"
+                    )
+                )
+            ) else (
+                RenderNotifyRollout.statusLabel.text = "❌ Invalid response"
+            )
+        ) catch (
+            RenderNotifyRollout.statusLabel.text = "⚠️ License check failed"
+        )
+        false
+    )
+
     fn renderLicense_sendLog license logText =
     (
         local escapedLog = renderLicense_escape logText
@@ -198,30 +247,21 @@ if json != undefined and json.ContainsKey "status" then (
         local notifyStart = getINISetting iniPath "RenderLicense" "notify_start"
         local license = getINISetting iniPath "RenderLicense" "license_key"
 
-        if license == "" do (
-            messageBox "⚠️ License is missing. Logging without key." title:"RenderLicenseApp"
-        )
+        if notifyStart == "true" and (licenseIsActive license) then (
+            local sceneName = if maxFileName != "" then maxFileName else "Untitled"
+            local cameraName = getRenderViewName()
 
-        local sceneName
-        if maxFileName != "" then
-            sceneName = maxFileName
-        else
-            sceneName = "Untitled"
+            local now = (dotNetClass "System.DateTime").Now
+            local timeStr = now.ToString "HH:mm:ss"
+            local dateStr = now.ToString "dd.MM.yyyy"
 
-        local cameraName = getRenderViewName()
+            local logText =
+                "🎬 Render started\n" +
+                "⏰ Time: " + timeStr + "\n" +
+                "🗕 Date: " + dateStr + "\n" +
+                "🗜 Scene: " + sceneName + "\n" +
+                "📷 View: " + cameraName
 
-        local now = (dotNetClass "System.DateTime").Now
-        local timeStr = now.ToString "HH:mm:ss"
-        local dateStr = now.ToString "dd.MM.yyyy"
-
-        local logText =
-            "🎬 Render started\n" +
-            "⏰ Time: " + timeStr + "\n" +
-            "🗕 Date: " + dateStr + "\n" +
-            "🗜 Scene: " + sceneName + "\n" +
-            "📷 View: " + cameraName
-
-        if notifyStart == "true" then (
             renderLicense_sendLog license logText
         )
     )
@@ -230,25 +270,24 @@ if json != undefined and json.ContainsKey "status" then (
     (
         local iniPath = getDir #userScripts + "\\render_license_config.ini"
         local license = getINISetting iniPath "RenderLicense" "license_key"
-        if license == "" do (
-            messageBox "⚠️ License is missing. Logging without key." title:"RenderLicenseApp"
+
+        if licenseIsActive license then (
+            local sceneName = if maxFileName != "" then maxFileName else "Untitled"
+            local cameraName = getRenderViewName()
+
+            local now = (dotNetClass "System.DateTime").Now
+            local timeStr = now.ToString "HH:mm:ss"
+            local dateStr = now.ToString "dd.MM.yyyy"
+
+            local logText =
+                "🎬 Render finished\n" +
+                "⏰ Time: " + timeStr + "\n" +
+                "🗕 Date: " + dateStr + "\n" +
+                "🗜 Scene: " + sceneName + "\n" +
+                "📷 View: " + cameraName
+
+            renderLicense_sendLog license logText
         )
-
-        local sceneName = if maxFileName != "" then maxFileName else "Untitled"
-        local cameraName = getRenderViewName()
-
-        local now = (dotNetClass "System.DateTime").Now
-        local timeStr = now.ToString "HH:mm:ss"
-        local dateStr = now.ToString "dd.MM.yyyy"
-
-        local logText =
-            "🎬 Render finished\n" +
-            "⏰ Time: " + timeStr + "\n" +
-            "🗕 Date: " + dateStr + "\n" +
-            "🗜 Scene: " + sceneName + "\n" +
-            "📷 View: " + cameraName
-
-        renderLicense_sendLog license logText
     )
 
     createDialog RenderNotifyRollout
