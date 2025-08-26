@@ -50,7 +50,8 @@ buttontext:"Notifier"
             )
             catch (
                 local ex = getCurrentException()
-                if (ex != undefined and ex.GetType().Name == "System.Net.WebException") then
+                local exType = if ex != undefined then ex.GetType().Name else ""
+                if exType == "System.Net.WebException" then
                     messageBox "🌐❌ No connection to server"
                 else (
                     format "Exception: %\n" ex
