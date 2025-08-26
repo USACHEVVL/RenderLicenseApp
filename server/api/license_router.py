@@ -29,4 +29,10 @@ def check_license(license_key: str, db: Session = Depends(get_db)):
         return {"status": "not_found", "valid": False}
     if license.valid_until <= datetime.utcnow():
         return {"status": "expired", "valid": False}
-    return {"status": "active", "valid": True, "user_id": license.user.telegram_id}
+    days_left = (license.valid_until - datetime.utcnow()).days
+    return {
+        "status": "active",
+        "valid": True,
+        "user_id": license.user.telegram_id,
+        "days_left": days_left,
+    }

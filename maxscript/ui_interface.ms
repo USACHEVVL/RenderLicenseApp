@@ -49,26 +49,32 @@ if json != undefined and json.ContainsKey "status" then (
 " status
 
     case status of (
-        "active": (
-            messageBox "✅ License active"
-            if json.ContainsKey "user_id" do (
-                local userId = json.Item["user_id"]
-                userIdLabel.text = "ID: " + userId.ToString()
-            )
+    "active": (
+        messageBox "✅ License active"
+        if (json.ContainsKey "user_id") and (json.ContainsKey "days_left") do (
+            local userId = json.Item["user_id"]
+            local daysLeft = json.Item["days_left"]
+			userIdLabel.text = "ID: " + userId.ToString() + " (" + daysLeft.ToString() + " days left)"
         )
-        "not_found": (
-            messageBox "❌ License not found"
-            userIdLabel.text = ""
-        )
-        "expired": (
-            messageBox "⏳ License expired"
-            userIdLabel.text = ""
-        )
-        default: (
-            messageBox "❌ Invalid server response"
-            userIdLabel.text = ""
-        )
+        statusLabel.text = "✅ License is active"
     )
+    "not_found": (
+        messageBox "❌ License not found"
+        userIdLabel.text = ""
+        statusLabel.text = "❌ License not found"
+    )
+    "expired": (
+        messageBox "⏳ License expired"
+        userIdLabel.text = ""
+        statusLabel.text = "⏳ License expired"
+    )
+    default: (
+        messageBox "❌ Invalid server response"
+        userIdLabel.text = ""
+        statusLabel.text = "❌ Invalid response"
+    )
+)
+
 ) else (
     messageBox "❌ Invalid server response"
     userIdLabel.text = ""
