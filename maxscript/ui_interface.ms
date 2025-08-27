@@ -147,7 +147,7 @@ if json != undefined and json.ContainsKey "status" then (
         on checkBtn pressed do (
             checkLicense licenseInput.text
         )
-        on renewBtn pressed do shellLaunch "https://t.me/RenderLicenseAppBot" ""
+        on renewBtn pressed do shellLaunch "https://t.me/Ano3D_bot?start=команда" ""
     )
 
     fn renderLicense_escape str =
