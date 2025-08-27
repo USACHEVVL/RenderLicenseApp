@@ -80,14 +80,14 @@ def delete_license(license_key: str = Form(...)):
     return RedirectResponse(url="/admin", status_code=303)
 
 
-@admin_router.post("/admin/expire")
-def expire_license(license_key: str = Form(...)):
-    """Mark the license as expired by setting its validity in the past."""
+@admin_router.post("/admin/reduce")
+def reduce_license(license_key: str = Form(...)):
+    """Reduce the validity of a license by 30 days."""
     db = SessionLocal()
     try:
         license = db.query(License).filter_by(license_key=license_key).first()
         if license:
-            license.valid_until = datetime.datetime.now() - datetime.timedelta(seconds=1)
+            license.valid_until -= datetime.timedelta(days=30)
             db.commit()
     finally:
         db.close()
