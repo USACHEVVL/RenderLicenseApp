@@ -192,15 +192,47 @@ async def grant_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             db.add(lic)
         db.commit()
+
+        # Handle referral bonus for the inviter
+        if user.referred_by_id and not user.referral_bonus_claimed:
+            referrer = db.query(User).filter_by(id=user.referred_by_id).first()
+            if referrer:
+                ref_license = db.query(License).filter_by(user_id=referrer.id).first()
+                now = datetime.datetime.now()
+                if ref_license:
+                    ref_license.valid_until = (
+                        max(ref_license.valid_until or now, now)
+                        + datetime.timedelta(days=30)
+                    )
+                else:
+                    ref_license = License(
+                        user_id=referrer.id,
+                        license_key=str(uuid.uuid4()),
+                        valid_until=now + datetime.timedelta(days=30),
+                    )
+                    db.add(ref_license)
+                user.referral_bonus_claimed = True
+                db.commit()
+                try:
+                    await context.bot.send_message(
+                        chat_id=referrer.telegram_id,
+                        text="🎉 Ваш приглашённый друг активировал лицензию. +30 дней к вашей лицензии!",
+                    )
+                except Exception:
+                    pass
+
         await context.bot.send_message(
             chat_id=user_id,
-            text=(f"✅ Оплата подтверждена. Ваша лицензия:\n<code>{license_key}</code>\n\n"
-                 "Вы можете просмотреть её в разделе 🔐 <b>«Лицензии»</b>."),
-            parse_mode="HTML")
+            text=(
+                f"✅ Оплата подтверждена. Ваша лицензия:\n<code>{license_key}</code>\n\n"
+                "Вы можете просмотреть её в разделе 🔐 <b>«Лицензии»</b>."
+            ),
+            parse_mode="HTML",
+        )
         await send_main_menu(user_id, context)
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"Пользователь {user_id} получил свою лицензию"
+            text=f"Пользователь {user_id} получил свою лицензию",
         )
         await query.edit_message_text("✅ Лицензия выдана.")
     finally:
