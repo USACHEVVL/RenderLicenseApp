@@ -1,49 +1,15 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Админ-панель</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            color: #333;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: white;
-        }
-        th, td {
-            border: 1px solid #aaa;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #eee;
-        }
-        .expired {
-            color: red;
-        }
-        .active {
-            color: green;
-        }
-    </style>
-</head>
-<body>
-
-    <div style="margin-bottom: 20px;">
-  <a href="/admin" style="margin-right: 10px;">📋 Все</a>
-  <a href="/admin?status=active" style="margin-right: 10px;">✅ Активные</a>
-  <a href="/admin?status=expired">❌ Просроченные</a>
-  <a href="/admin/users" style="margin-left: 30px;">👤 Пользователи</a>
+{% extends "base.html" %}
+{% block title %}Админ-панель{% endblock %}
+{% block content %}
+<div class="nav">
+    <a href="/admin">📋 Все</a>
+    <a href="/admin?status=active">✅ Активные</a>
+    <a href="/admin?status=expired">❌ Просроченные</a>
+    <a href="/admin/users" class="users">👤 Пользователи</a>
 </div>
 
 <h2>➕ Создать новую лицензию</h2>
-<form method="post" action="/admin/create" style="margin-bottom: 30px;">
+<form class="form-create" method="post" action="/admin/create">
     <label for="telegram_id">Telegram ID пользователя:</label>
     <input type="text" id="telegram_id" name="telegram_id" required>
 
@@ -53,7 +19,7 @@
     <button type="submit">Создать лицензию</button>
 </form>
 
-<form method="get" action="/admin" style="margin-bottom: 20px;">
+<form method="get" action="/admin">
     <label for="q">Поиск:</label>
     <input type="text" id="q" name="q" value="{{ q or '' }}" placeholder="ID или ключ">
 
@@ -74,38 +40,37 @@
 </form>
 
     <h1>🔐 Лицензии</h1>
-    <table>
-        <tr>
-            <th>Ключ</th>
-            <th>Действует до</th>
-            <th>Пользователь</th>
-            <th>Статус</th>
-            <th>Действия</th>
-        </tr>
-        {% for lic in licenses %}
-        <tr>
-            <td><code>{{ lic.key }}</code></td>
-            <td>{{ lic.valid_until }}</td>
-            <td>{{ lic.user_id }}</td>
-            <td class="{{ 'active' if 'Активна' in lic.status else 'expired' }}">{{ lic.status }}</td>
-            <td>
-                <form method="post" action="/admin/delete" style="display:inline;" onsubmit="return confirm('Удалить эту лицензию?');">
-                    <input type="hidden" name="license_key" value="{{ lic.key }}">
-                    <button type="submit">🗑</button>
-                </form>
+<table>
+    <tr>
+        <th>Ключ</th>
+        <th>Действует до</th>
+        <th>Пользователь</th>
+        <th>Статус</th>
+        <th>Действия</th>
+    </tr>
+    {% for lic in licenses %}
+    <tr>
+        <td><code>{{ lic.key }}</code></td>
+        <td>{{ lic.valid_until }}</td>
+        <td>{{ lic.user_id }}</td>
+        <td class="{{ 'status-active' if 'Активна' in lic.status else 'status-expired' }}">{{ lic.status }}</td>
+        <td>
+            <form method="post" action="/admin/delete" class="inline-form" onsubmit="return confirm('Удалить эту лицензию?');">
+                <input type="hidden" name="license_key" value="{{ lic.key }}">
+                <button type="submit">🗑</button>
+            </form>
 
-                <form method="post" action="/admin/reduce" style="display:inline; margin-left: 5px;" onsubmit="return confirm('Уменьшить срок действия этой лицензии на 30 дней?');">
-                    <input type="hidden" name="license_key" value="{{ lic.key }}">
-                    <button type="submit">➖ 30 дн.</button>
-                </form>
+                  <form method="post" action="/admin/reduce" class="inline-form" onsubmit="return confirm('Уменьшить срок действия этой лицензии на 30 дней?');">
+                <input type="hidden" name="license_key" value="{{ lic.key }}">
+                <button type="submit">➖ 30 дн.</button>
+            </form>
 
-                <form method="post" action="/admin/extend" style="display:inline; margin-left: 5px;">
-                    <input type="hidden" name="license_key" value="{{ lic.key }}">
-                    <button type="submit">➕ 30 дн.</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+                <form method="post" action="/admin/extend" class="inline-form">
+                <input type="hidden" name="license_key" value="{{ lic.key }}">
+                <button type="submit">➕ 30 дн.</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

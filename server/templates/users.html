@@ -1,60 +1,28 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Пользователи</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            color: #333;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: white;
-        }
-        th, td {
-            border: 1px solid #aaa;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #eee;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Пользователи{% endblock %}
+{% block content %}
+<div class="nav">
+    <a href="/admin">← Назад к лицензиям</a>
+</div>
 
-    <div style="margin-bottom: 20px;">
-        <a href="/admin">← Назад к лицензиям</a>
-    </div>
-
-    <h1>👤 Пользователи</h1>
-
-    <table>
-        <tr>
-            <th>Telegram ID</th>
-            <th>Количество лицензий</th>
-            <th>Действия</th>
-        </tr>
-        {% for user in users %}
-        <tr>
-            <td>{{ user.telegram_id }}</td>
-            <td>{{ user.license_count }}</td>
-            <td>
-                <form method="post" action="/admin/users/delete" onsubmit="return confirm('Удалить пользователя и все его данные?');">
-                    <input type="hidden" name="user_id" value="{{ user.id }}">
-                    <button type="submit">🗑 Удалить</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-
-
-</body>
-</html>
+   <h1>👤 Пользователи</h1>
+<table>
+    <tr>
+        <th>Telegram ID</th>
+        <th>Количество лицензий</th>
+        <th>Действия</th>
+    </tr>
+    {% for user in users %}
+    <tr>
+        <td>{{ user.telegram_id }}</td>
+        <td>{{ user.license_count }}</td>
+        <td>
+            <form method="post" action="/admin/users/delete" class="inline-form" onsubmit="return confirm('Удалить пользователя и все его данные?');">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                <button type="submit">🗑 Удалить</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

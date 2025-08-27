@@ -2,6 +2,7 @@ import os
 import asyncio
 import uuid
 import datetime
+from pathlib import Path
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -26,15 +27,19 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 ADMIN_ID = 670562262
 
 async def send_main_menu(user_id, context):
-    await context.bot.send_message(
-        chat_id=user_id,
-        text="Привет! 👋 Выберите действие:",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔐 Лицензии", callback_data='licenses_menu')],
-            [InlineKeyboardButton("👥 Пригласить друга", callback_data='invite_friend')],
-            [InlineKeyboardButton("📊 Мои рефералы", callback_data='referral_stats')],
-        ])
-    )
+    keyboard = [
+        [InlineKeyboardButton("🔐 Лицензии", callback_data='licenses_menu')],
+        [InlineKeyboardButton("👥 Пригласить друга", callback_data='invite_friend')],
+        [InlineKeyboardButton("📊 Мои рефералы", callback_data='referral_stats')],
+    ]
+    logo_path = Path(__file__).resolve().parent / "assets" / "logo.png"
+    with open(logo_path, "rb") as logo:
+        await context.bot.send_photo(
+            chat_id=user_id,
+            photo=logo,
+            caption="Привет! 👋 Выберите действие:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tg_id = update.effective_user.id
@@ -61,14 +66,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     finally:
         db.close()
 
-    keyboard = [
-        [InlineKeyboardButton("🔐 Лицензии", callback_data='licenses_menu')],
-        [InlineKeyboardButton("👥 Пригласить друга", callback_data='invite_friend')],
-        [InlineKeyboardButton("📊 Мои рефералы", callback_data='referral_stats')],
-    ]
-    await (update.message or update.callback_query.message).reply_text(
-        "Привет! 👋 Выберите действие:", reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    await send_main_menu(tg_id, context)
 
 
 async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
