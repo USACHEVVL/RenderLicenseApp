@@ -33,13 +33,15 @@ async def send_main_menu(user_id, context):
         [InlineKeyboardButton("📊 Мои рефералы", callback_data='referral_stats')],
     ]
     logo_path = Path(__file__).resolve().parent / "assets" / "logo.png"
-    with open(logo_path, "rb") as logo:
-        await context.bot.send_photo(
-            chat_id=user_id,
-            photo=logo,
-            caption="Привет! 👋 Выберите действие:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
+    if logo_path.exists():
+        with logo_path.open("rb") as logo:
+            await context.bot.send_photo(chat_id=user_id, photo=logo,
+                                         caption="Привет! 👋 Выберите действие:",
+                                         reply_markup=InlineKeyboardMarkup(keyboard))
+    else:
+        await context.bot.send_message(chat_id=user_id,
+                                       text="Привет! 👋 Выберите действие:",
+                                       reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tg_id = update.effective_user.id
