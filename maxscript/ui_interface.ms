@@ -9,12 +9,12 @@ buttontext:"Notifier"
 
     rollout RenderNotifyRollout "Render License Notifier" width:300
     (
-        edittext licenseInput "License Key:" width:280 limitText:36
-        button checkBtn "License check" width:280
-        label userIdLabel "" width:280
-        checkbox notifyStart "Notify on render start"
-        label statusLabel "Checking license..." width:280
-        button renewBtn "Renew license" width:280 visible:false
+		edittext licenseInput "License Key:" width:280 align:#center limitText:36
+        button checkBtn "License check" width:280 align:#center
+        label userIdLabel "" width:280 align:#center
+        checkbox notifyStart "Notify on render start" width:280 align:#center indent:-15
+        label statusLabel "Checking license..." width:280 align:#center
+        button renewBtn "Renew license" width:280 align:#center visible:false
 
         fn checkLicense key =
         (
