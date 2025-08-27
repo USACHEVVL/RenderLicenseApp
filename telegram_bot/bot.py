@@ -30,12 +30,28 @@ async def send_main_menu(user_id, context):
         text="Привет! 👋 Выберите действие:",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🔐 Лицензии", callback_data='licenses_menu')],
+            [InlineKeyboardButton("👥 Пригласить друга", callback_data='invite_friend')],
         ])
     )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    tg_id = update.effective_user.id
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(telegram_id=tg_id).first()
+        if not user:
+            user = User(telegram_id=tg_id, referral_code=str(uuid.uuid4()))
+            db.add(user)
+            db.commit()
+        elif not user.referral_code:
+            user.referral_code = str(uuid.uuid4())
+            db.commit()
+    finally:
+        db.close()
+
     keyboard = [
         [InlineKeyboardButton("🔐 Лицензии", callback_data='licenses_menu')],
+        [InlineKeyboardButton("👥 Пригласить друга", callback_data='invite_friend')],
     ]
     await (update.message or update.callback_query.message).reply_text(
         "Привет! 👋 Выберите действие:", reply_markup=InlineKeyboardMarkup(keyboard)
@@ -72,6 +88,33 @@ async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await query.edit_message_text(msg, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb))
     finally:
         db.close()
+
+
+async def invite_friend(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    tg_id = update.effective_user.id
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(telegram_id=tg_id).first()
+        if user and not user.referral_code:
+            user.referral_code = str(uuid.uuid4())
+            db.commit()
+        elif not user:
+            user = User(telegram_id=tg_id, referral_code=str(uuid.uuid4()))
+            db.add(user)
+            db.commit()
+        bot_username = (await context.bot.get_me()).username
+        link = f"https://t.me/{bot_username}?start={user.referral_code}"
+    finally:
+        db.close()
+
+    await query.edit_message_text(
+        f"👥 Поделитесь этой ссылкой, чтобы пригласить друга:\n{link}",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Назад", callback_data='back_to_main')]
+        ]),
+    )
 
 
 async def pay_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -205,6 +248,8 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await confirm_renew(update, context)
     elif command.startswith("renew_"):
         return await handle_renew_license(update, context)
+    elif command == 'invite_friend':
+        return await invite_friend(update, context)
 
 async def handle_renew_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
