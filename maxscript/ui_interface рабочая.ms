@@ -14,6 +14,7 @@ buttontext:"Notifier"
         label userIdLabel "" width:280
         checkbox notifyStart "Notify on render start"
         label statusLabel "Checking license..." width:280
+        button renewBtn "Renew license" width:280 visible:false
 
         fn checkLicense key =
         (
@@ -54,30 +55,35 @@ if json != undefined and json.ContainsKey "status" then (
         if (json.ContainsKey "user_id") and (json.ContainsKey "days_left") do (
             local userId = json.Item["user_id"]
             local daysLeft = json.Item["days_left"]
-			userIdLabel.text = "ID: " + userId.ToString() + " (" + daysLeft.ToString() + " days left)"
+                        userIdLabel.text = "ID: " + userId.ToString() + " (" + daysLeft.ToString() + " days left)"
         )
         statusLabel.text = "✅ License is active"
+        renewBtn.visible = false
     )
     "not_found": (
         messageBox "❌ License not found"
         userIdLabel.text = ""
         statusLabel.text = "❌ License not found"
+        renewBtn.visible = false
     )
     "expired": (
         messageBox "⏳ License expired"
         userIdLabel.text = ""
         statusLabel.text = "⏳ License expired"
+        renewBtn.visible = true
     )
     default: (
         messageBox "❌ Invalid server response"
         userIdLabel.text = ""
         statusLabel.text = "❌ Invalid response"
+        renewBtn.visible = false
     )
 )
 
 ) else (
     messageBox "❌ Invalid server response"
     userIdLabel.text = ""
+    renewBtn.visible = false
 )
             )
             catch (
@@ -101,6 +107,7 @@ if json != undefined and json.ContainsKey "status" then (
                 ) catch (
                     messageBox "❌ Critical error during license check"
                 )
+                renewBtn.visible = false
             )
         )
 
@@ -140,6 +147,7 @@ if json != undefined and json.ContainsKey "status" then (
         on checkBtn pressed do (
             checkLicense licenseInput.text
         )
+        on renewBtn pressed do shellLaunch "https://t.me/RenderLicenseAppBot"
     )
 
     fn renderLicense_escape str =
