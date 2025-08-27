@@ -36,11 +36,21 @@ async def send_main_menu(user_id, context):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tg_id = update.effective_user.id
+    start_param = context.args[0] if context.args else None
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(telegram_id=tg_id).first()
         if not user:
-            user = User(telegram_id=tg_id, referral_code=str(uuid.uuid4()))
+            referred_by_id = None
+            if start_param:
+                referrer = db.query(User).filter_by(referral_code=start_param).first()
+                if referrer:
+                    referred_by_id = referrer.id
+            user = User(
+                telegram_id=tg_id,
+                referral_code=str(uuid.uuid4()),
+                referred_by_id=referred_by_id,
+            )
             db.add(user)
             db.commit()
         elif not user.referral_code:
