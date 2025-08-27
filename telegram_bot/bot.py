@@ -17,6 +17,7 @@ from telegram.ext import (
 from server.db.session import SessionLocal
 from server.models.user import User
 from server.models.license import License
+from server.services.referral_service import get_referrals_and_bonus_days
 
 WAITING_FOR_PAYMENT_PROOF = 1
 
@@ -31,6 +32,7 @@ async def send_main_menu(user_id, context):
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🔐 Лицензии", callback_data='licenses_menu')],
             [InlineKeyboardButton("👥 Пригласить друга", callback_data='invite_friend')],
+            [InlineKeyboardButton("📊 Мои рефералы", callback_data='referral_stats')],
         ])
     )
 
@@ -62,6 +64,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🔐 Лицензии", callback_data='licenses_menu')],
         [InlineKeyboardButton("👥 Пригласить друга", callback_data='invite_friend')],
+        [InlineKeyboardButton("📊 Мои рефералы", callback_data='referral_stats')],
     ]
     await (update.message or update.callback_query.message).reply_text(
         "Привет! 👋 Выберите действие:", reply_markup=InlineKeyboardMarkup(keyboard)
@@ -124,6 +127,37 @@ async def invite_friend(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🔙 Назад", callback_data='back_to_main')]
         ]),
+    )
+
+
+async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if query:
+        await query.answer()
+
+    tg_id = update.effective_user.id
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(telegram_id=tg_id).first()
+        referrals, days_left = ([], 0)
+        if user:
+            referrals, days_left = get_referrals_and_bonus_days(db, user)
+    finally:
+        db.close()
+
+    lines = "\n".join(f"• {r.telegram_id}" for r in referrals)
+    msg = (
+        f"✅ Успешных приглашений: {len(referrals)}\n"
+        f"🎁 Бонусных дней осталось: {days_left}"
+    )
+    if lines:
+        msg += f"\n\nПриглашённые пользователи:\n{lines}"
+    else:
+        msg += "\n\nПока нет успешных приглашений."
+
+    keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data='back_to_main')]]
+    await (update.message or update.callback_query.message).reply_text(
+        msg, reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
@@ -292,6 +326,8 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await handle_renew_license(update, context)
     elif command == 'invite_friend':
         return await invite_friend(update, context)
+    elif command == 'referral_stats':
+        return await show_referrals(update, context)
 
 async def handle_renew_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -322,6 +358,7 @@ conv_handler = ConversationHandler(
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("referrals", show_referrals))
     app.add_handler(conv_handler)
 
     await app.initialize()
