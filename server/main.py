@@ -1,7 +1,9 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
 import logging
+from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Bot
@@ -26,6 +28,8 @@ else:
     bot = Bot(token=TG_TOKEN)
 
 app = FastAPI()
+BASE_DIR = Path(__file__).resolve().parent
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 # Подключаем админский роутер
 app.include_router(admin_router)
