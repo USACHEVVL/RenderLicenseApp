@@ -1,0 +1,94 @@
+:root {
+    --main-bg: #ffffff;
+    --text-color: #2c2c2c;
+    --accent: #ff6600;
+}
+
+body {
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    font-family: Arial, sans-serif;
+    margin: 2rem;
+}
+
+.content {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    margin-right: 1rem;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.nav {
+    margin-bottom: 20px;
+}
+
+.nav a {
+    margin-right: 10px;
+}
+
+.nav a.users {
+    margin-left: 30px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #fff;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+button {
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+.form-create {
+    margin-bottom: 30px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.inline-form + .inline-form {
+    margin-left: 5px;
+}
+
+.status-active {
+    color: var(--accent);
+}
+
+.status-expired {
+    color: #999;
+}
