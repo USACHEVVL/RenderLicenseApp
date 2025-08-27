@@ -94,17 +94,15 @@
                     <button type="submit">🗑</button>
                 </form>
 
-                <form method="post" action="/admin/expire" style="display:inline; margin-left: 5px;" onsubmit="return confirm('Сделать эту лицензию просроченной?');">
+                <form method="post" action="/admin/reduce" style="display:inline; margin-left: 5px;" onsubmit="return confirm('Уменьшить срок действия этой лицензии на 30 дней?');">
                     <input type="hidden" name="license_key" value="{{ lic.key }}">
-                    <button type="submit">⛔ Просрочить</button>
+                    <button type="submit">➖ 30 дн.</button>
                 </form>
 
-                {% if "Активна" in lic.status %}
                 <form method="post" action="/admin/extend" style="display:inline; margin-left: 5px;">
                     <input type="hidden" name="license_key" value="{{ lic.key }}">
                     <button type="submit">➕ 30 дн.</button>
                 </form>
-                {% endif %}
             </td>
         </tr>
         {% endfor %}
