@@ -145,6 +145,10 @@ async def grant_license(update: Update, context: ContextTypes.DEFAULT_TYPE):
                  "Вы можете просмотреть её в разделе 🔐 <b>«Лицензии»</b>."),
             parse_mode="HTML")
         await send_main_menu(user_id, context)
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"Пользователь {user_id} получил свою лицензию"
+        )
         await query.edit_message_text("✅ Лицензия выдана.")
     finally:
         db.close()
