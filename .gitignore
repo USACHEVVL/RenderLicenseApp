@@ -2,4 +2,3 @@ __pycache__/
 *.pyc
 .env
 venv/
-telegram_bot/assets/logo.png
