@@ -26,12 +26,14 @@ async def main() -> None:
         expired_license = result.scalars().first()
         if expired_license:
             expired_license.license_key = key
-            expired_license.valid_until = datetime.datetime.now() - datetime.timedelta(days=10)
+            # Use UTC consistently with the application's time handling.
+            expired_license.valid_until = datetime.datetime.utcnow() - datetime.timedelta(days=10)
         else:
             expired_license = License(
                 user_id=user.id,
                 license_key=key,
-                valid_until=datetime.datetime.now() - datetime.timedelta(days=10),
+                # Maintain UTC for consistency across the codebase.
+                valid_until=datetime.datetime.utcnow() - datetime.timedelta(days=10),
             )
             db.add(expired_license)
         await db.commit()
