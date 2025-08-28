@@ -10,11 +10,8 @@ from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
 from starlette.status import HTTP_303_SEE_OTHER
-<<<<<<< ours
-from sqlalchemy import or_, cast, String, func
-=======
 from sqlalchemy import cast, delete, or_, select, String
->>>>>>> theirs
+
 
 admin_router = APIRouter()
 
@@ -22,22 +19,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @admin_router.get("/admin", response_class=HTMLResponse)
-<<<<<<< ours
-def admin_dashboard(request: Request, status: str = "", sort: str = "", q: str = ""):
-    db = SessionLocal()
-    # Current UTC time, kept for potential future use
-    now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
 
-    # Присоединяем таблицы и сразу выбираем связанные модели
-    licenses_query = db.query(License, User).join(User)
-
-    # --- ПОИСК ---
-    if q:
-        licenses_query = licenses_query.filter(
-            or_(
-                License.license_key.ilike(f"%{q}%"),
-                cast(User.telegram_id, String).ilike(f"%{q}%")
-=======
 async def admin_dashboard(
     request: Request, status: str = "", sort: str = "", q: str = ""
 ):
@@ -50,7 +32,6 @@ async def admin_dashboard(
                     License.license_key.ilike(f"%{q}%"),
                     cast(User.telegram_id, String).ilike(f"%{q}%"),
                 )
->>>>>>> theirs
             )
 
         if status == "active":
@@ -66,6 +47,7 @@ async def admin_dashboard(
         result = await db.execute(licenses_query)
         rows = result.all()
 
+<<<<<<< ours
 <<<<<<< ours
     enriched_licenses = [
         {
@@ -86,6 +68,8 @@ async def admin_dashboard(
         "q": q
     })
 =======
+=======
+>>>>>>> theirs
     enriched_licenses = []
     for lic, user in rows:
         enriched_licenses.append(
@@ -109,6 +93,9 @@ async def admin_dashboard(
             "q": q,
         },
     )
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 
 @admin_router.post("/admin/delete")
@@ -153,6 +140,7 @@ async def extend_license(license_key: str = Form(...)):
 
 @admin_router.get("/admin/users", response_class=HTMLResponse)
 <<<<<<< ours
+<<<<<<< ours
 def admin_users(request: Request):
     db = SessionLocal()
     users_query = (
@@ -171,6 +159,8 @@ def admin_users(request: Request):
 
     db.close()
 =======
+=======
+>>>>>>> theirs
 async def admin_users(request: Request):
     async with SessionLocal() as db:
         result = await db.execute(select(User))
@@ -188,6 +178,9 @@ async def admin_users(request: Request):
                     "license_count": license_count,
                 }
             )
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 
     return templates.TemplateResponse(
