@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import sys
 from pathlib import Path
+
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -30,15 +31,15 @@ def setup_test_db():
     return engine, TestingSessionLocal
 
 
-def count_queries(engine, func):
+async def count_queries(engine, func, *args, **kwargs):
     queries = {"count": 0}
 
-    def before_cursor_execute(*args, **kwargs):
+    def before_cursor_execute(*args2, **kwargs2):
         queries["count"] += 1
 
     event.listen(engine.sync_engine, "before_cursor_execute", before_cursor_execute)
     try:
-        asyncio.run(func())
+        await func(*args, **kwargs)
     finally:
         event.remove(engine.sync_engine, "before_cursor_execute", before_cursor_execute)
     return queries["count"]
@@ -76,10 +77,9 @@ def test_admin_dashboard_query_count(monkeypatch):
 
     monkeypatch.setattr(admin_routes, "SessionLocal", TestingSessionLocal)
 
-    async def call():
-        await admin_routes.admin_dashboard(DummyRequest())
-
-    query_count = count_queries(engine, call)
+    query_count = asyncio.run(
+        count_queries(engine, admin_routes.admin_dashboard, DummyRequest())
+    )
     assert query_count == 1
 
 
@@ -112,8 +112,7 @@ def test_admin_users_query_count(monkeypatch):
 
     monkeypatch.setattr(admin_routes, "SessionLocal", TestingSessionLocal)
 
-    async def call():
-        await admin_routes.admin_users(DummyRequest())
-
-    query_count = count_queries(engine, call)
+    query_count = asyncio.run(
+        count_queries(engine, admin_routes.admin_users, DummyRequest())
+    )
     assert query_count == 1
