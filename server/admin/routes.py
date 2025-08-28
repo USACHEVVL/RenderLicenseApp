@@ -34,15 +34,15 @@ def admin_dashboard(request: Request, status: str = "", sort: str = "", q: str =
 
     # --- ФИЛЬТР ПО СТАТУСУ ---
     if status == "active":
-        licenses_query = licenses_query.filter(License.valid_until >= now)
-    elif status == "expired":
-        licenses_query = licenses_query.filter(License.valid_until < now)
+        licenses_query = licenses_query.filter(License.is_active == True)
+    elif status == "inactive":
+        licenses_query = licenses_query.filter(License.is_active == False)
 
     # --- СОРТИРОВКА ---
-    if sort == "valid_until_asc":
-        licenses_query = licenses_query.order_by(License.valid_until.asc())
-    elif sort == "valid_until_desc":
-        licenses_query = licenses_query.order_by(License.valid_until.desc())
+    if sort == "next_charge_at_asc":
+        licenses_query = licenses_query.order_by(License.next_charge_at.asc())
+    elif sort == "next_charge_at_desc":
+        licenses_query = licenses_query.order_by(License.next_charge_at.desc())
 
     licenses = licenses_query.all()
 
@@ -52,9 +52,9 @@ def admin_dashboard(request: Request, status: str = "", sort: str = "", q: str =
 
         enriched_licenses.append({
             "key": lic.license_key,
-            "valid_until": lic.valid_until.strftime("%d.%m.%Y"),
+            "next_charge_at": lic.next_charge_at.strftime("%d.%m.%Y") if lic.next_charge_at else "—",
             "user_id": user.telegram_id if user else "—",
-            "status": "✅ Активна" if lic.valid_until > now else "❌ Просрочена"
+            "status": "✅ Активна" if lic.is_active else "❌ Неактивна"
         })
 
     db.close()
@@ -86,8 +86,9 @@ def reduce_license(license_key: str = Form(...)):
     db = SessionLocal()
     try:
         license = db.query(License).filter_by(license_key=license_key).first()
-        if license:
-            license.valid_until -= datetime.timedelta(days=30)
+        if license and license.next_charge_at:
+            license.next_charge_at -= datetime.timedelta(days=30)
+            license.valid_until = license.next_charge_at
             db.commit()
     finally:
         db.close()
@@ -102,7 +103,10 @@ def extend_license(license_key: str = Form(...)):
     try:
         license = db.query(License).filter_by(license_key=license_key).first()
         if license:
-            license.valid_until += datetime.timedelta(days=30)
+            base = license.next_charge_at or datetime.datetime.now()
+            license.next_charge_at = base + datetime.timedelta(days=30)
+            license.valid_until = license.next_charge_at
+            license.is_active = True
             db.commit()
     finally:
         db.close()
@@ -158,16 +162,20 @@ def create_license(telegram_id: int = Form(...), days: int = Form(...)):
             db.refresh(user)
 
         license_key = str(uuid.uuid4())
-        valid_until = datetime.datetime.now() + datetime.timedelta(days=days)
+        next_charge_at = datetime.datetime.now() + datetime.timedelta(days=days)
 
         existing = db.query(License).filter_by(user_id=user.id).first()
         if existing:
             existing.license_key = license_key
-            existing.valid_until = valid_until
+            existing.next_charge_at = next_charge_at
+            existing.valid_until = next_charge_at
+            existing.is_active = True
         else:
             new_license = License(
                 license_key=license_key,
-                valid_until=valid_until,
+                next_charge_at=next_charge_at,
+                valid_until=next_charge_at,
+                is_active=True,
                 user_id=user.id
             )
             db.add(new_license)

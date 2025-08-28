@@ -27,9 +27,11 @@ def check_license(license_key: str, db: Session = Depends(get_db)):
     license = license_service.get_license_by_key(db, license_key)
     if license is None:
         return {"status": "not_found", "valid": False}
-    if license.valid_until <= datetime.utcnow():
-        return {"status": "expired", "valid": False}
-    days_left = (license.valid_until - datetime.utcnow()).days
+    if not license.is_active or (license.next_charge_at and license.next_charge_at <= datetime.utcnow()):
+        return {"status": "inactive", "valid": False}
+    days_left = 0
+    if license.next_charge_at:
+        days_left = (license.next_charge_at - datetime.utcnow()).days
     return {
         "status": "active",
         "valid": True,
