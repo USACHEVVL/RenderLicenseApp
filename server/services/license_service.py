@@ -2,6 +2,7 @@
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from server.models.license import License
 from server.models.user import User
@@ -33,5 +34,9 @@ async def create_license(
 
 
 async def get_license_by_key(db: AsyncSession, license_key: str):
-    result = await db.execute(select(License).filter(License.license_key == license_key))
+    result = await db.execute(
+        select(License)
+        .options(selectinload(License.user))
+        .filter(License.license_key == license_key)
+    )
     return result.scalars().first()
