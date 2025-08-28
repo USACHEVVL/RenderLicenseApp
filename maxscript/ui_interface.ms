@@ -14,7 +14,7 @@ buttontext:"Notifier"
         label userIdLabel "" width:280 align:#center
         checkbox notifyStart "Notify on render start" width:280 align:#center indent:-15
         label statusLabel "Checking license..." width:280 align:#center
-        button renewBtn "Renew license" width:280 align:#center visible:false
+        button subscriptionBtn "Manage subscription" width:280 align:#center visible:false
 
         fn checkLicense key =
         (
@@ -58,32 +58,32 @@ if json != undefined and json.ContainsKey "status" then (
                         userIdLabel.text = "ID: " + userId.ToString() + " (" + daysLeft.ToString() + " days left)"
         )
         statusLabel.text = "✅ License is active"
-        renewBtn.visible = false
+        subscriptionBtn.visible = false
     )
     "not_found": (
         messageBox "❌ License not found"
         userIdLabel.text = ""
         statusLabel.text = "❌ License not found"
-        renewBtn.visible = false
+        subscriptionBtn.visible = false
     )
-    "expired": (
-        messageBox "⏳ License expired"
+    "inactive": (
+        messageBox "⏳ Subscription inactive"
         userIdLabel.text = ""
-        statusLabel.text = "⏳ License expired"
-        renewBtn.visible = true
+        statusLabel.text = "⏳ Subscription inactive"
+        subscriptionBtn.visible = true
     )
     default: (
         messageBox "❌ Invalid server response"
         userIdLabel.text = ""
         statusLabel.text = "❌ Invalid response"
-        renewBtn.visible = false
+        subscriptionBtn.visible = false
     )
 )
 
 ) else (
     messageBox "❌ Invalid server response"
     userIdLabel.text = ""
-    renewBtn.visible = false
+    subscriptionBtn.visible = false
 )
             )
             catch (
@@ -107,7 +107,7 @@ if json != undefined and json.ContainsKey "status" then (
                 ) catch (
                     messageBox "❌ Critical error during license check"
                 )
-                renewBtn.visible = false
+                subscriptionBtn.visible = false
             )
         )
 
@@ -147,7 +147,7 @@ if json != undefined and json.ContainsKey "status" then (
         on checkBtn pressed do (
             checkLicense licenseInput.text
         )
-        on renewBtn pressed do shellLaunch "https://t.me/Ano3D_bot?start=команда" ""
+        on subscriptionBtn pressed do shellLaunch "https://t.me/Ano3D_bot?start=команда" ""
     )
 
     fn renderLicense_escape str =
@@ -186,29 +186,29 @@ if json != undefined and json.ContainsKey "status" then (
                             RenderNotifyRollout.userIdLabel.text = "ID: " + userId.ToString() + " (" + daysLeft.ToString() + " days left)"
                         )
                         RenderNotifyRollout.statusLabel.text = "✅ License is active"
-                        RenderNotifyRollout.renewBtn.visible = false
+                        RenderNotifyRollout.subscriptionBtn.visible = false
                         return true
                     )
-                    "expired": (
-                        RenderNotifyRollout.statusLabel.text = "⏳ License expired"
-                        RenderNotifyRollout.renewBtn.visible = true
+                    "inactive": (
+                        RenderNotifyRollout.statusLabel.text = "⏳ Subscription inactive"
+                        RenderNotifyRollout.subscriptionBtn.visible = true
                     )
                     "not_found": (
                         RenderNotifyRollout.statusLabel.text = "❌ License not found"
-                        RenderNotifyRollout.renewBtn.visible = false
+                        RenderNotifyRollout.subscriptionBtn.visible = false
                     )
                     default: (
                         RenderNotifyRollout.statusLabel.text = "❌ Invalid response"
-                        RenderNotifyRollout.renewBtn.visible = false
+                        RenderNotifyRollout.subscriptionBtn.visible = false
                     )
                 )
             ) else (
                 RenderNotifyRollout.statusLabel.text = "❌ Invalid response"
-                RenderNotifyRollout.renewBtn.visible = false
+                RenderNotifyRollout.subscriptionBtn.visible = false
             )
         ) catch (
             RenderNotifyRollout.statusLabel.text = "⚠️ License check failed"
-            RenderNotifyRollout.renewBtn.visible = false
+            RenderNotifyRollout.subscriptionBtn.visible = false
         )
         false
     )

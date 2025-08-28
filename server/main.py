@@ -58,8 +58,9 @@ async def handle_render_notify(data: RenderData):
         license = db.query(License).filter_by(license_key=data.license_key).first()
         if (
             license
-            and license.valid_until
-            and license.valid_until > datetime.utcnow()
+            and license.is_active
+            and license.next_charge_at
+            and license.next_charge_at > datetime.utcnow()
         ):
             user = db.query(User).filter_by(id=license.user_id).first()
             if user:
