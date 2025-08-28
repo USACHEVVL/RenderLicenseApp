@@ -50,25 +50,42 @@ async def handle_render_notify(data: RenderData):
     """
 
     user_chat_id = None
+    user_id = None
 
     async with SessionLocal() as db:
         result = await db.execute(
             select(License).filter_by(license_key=data.license_key)
         )
         license = result.scalars().first()
-        if (
-            license
-            and license.is_active
+        if not license:
+            logging.warning(
+                "License not found for key %s", data.license_key
+            )
+        elif (
+            license.is_active
             and license.next_charge_at
             and license.next_charge_at > datetime.utcnow()
         ):
-            result = await db.execute(select(User).filter_by(id=license.user_id))
+            user_id = license.user_id
+            result = await db.execute(select(User).filter_by(id=user_id))
             user = result.scalars().first()
-            if user:
+            if not user:
+                logging.warning(
+                    "User %s not found for license %s",
+                    user_id,
+                    data.license_key,
+                )
+            elif not user.telegram_id:
+                logging.info(
+                    "Missing telegram_id for user %s and license %s",
+                    user.id,
+                    data.license_key,
+                )
+            else:
                 user_chat_id = user.telegram_id
         else:
             logging.info(
-                "Inactive or missing license for key %s; skipping notification",
+                "Inactive license for key %s; skipping notification",
                 data.license_key,
             )
 
@@ -82,7 +99,9 @@ async def handle_render_notify(data: RenderData):
             logging.exception("Failed to send Telegram message")
     elif bot:
         logging.info(
-            "Telegram message skipped: no active license or user chat ID."
+            "Telegram message skipped: license_key=%s user_id=%s",
+            data.license_key,
+            user_id,
         )
     else:
         logging.warning(
