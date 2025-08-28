@@ -20,7 +20,37 @@ from server.services.referral_service import get_referrals_and_bonus_days
 
 
 load_dotenv()
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+
+def _load_bot_token() -> str:
+    """Load and validate Telegram bot token from environment or .env.
+
+    Looks for TELEGRAM_BOT_TOKEN, BOT_TOKEN, or TOKEN. Strips quotes/spaces
+    and validates basic format before building the Application.
+    """
+    token = (
+        os.getenv("TELEGRAM_BOT_TOKEN")
+        or os.getenv("BOT_TOKEN")
+        or os.getenv("TOKEN")
+    )
+    if token:
+        token = token.strip().strip("'\"")
+
+    if not token:
+        raise RuntimeError(
+            "Не найден токен бота. Задайте переменную окружения TELEGRAM_BOT_TOKEN "
+            "или создайте файл .env с TELEGRAM_BOT_TOKEN=123456789:ABCDEF..."
+        )
+
+    # Бот-токен от BotFather имеет вид '<digits>:<rest>'
+    if ":" not in token:
+        raise RuntimeError(
+            "Неверный формат TELEGRAM_BOT_TOKEN. Проверьте токен от @BotFather без кавычек."
+        )
+    return token
+
+
+TOKEN = _load_bot_token()
 ADMIN_ID = 670562262
 
 
@@ -293,4 +323,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-
