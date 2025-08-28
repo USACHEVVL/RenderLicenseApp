@@ -119,7 +119,10 @@ async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
         license = db.query(License).filter_by(user_id=user.id).first() if user else None
 
         if not license or not license.is_active:
-            msg = "У вас нет активной подписки."
+            msg = (
+                "На данный момент подписка не оформлена. "
+                "Подписка на сервис оповещений о рендеринге 3DMax стоит 49 руб/мес."
+            )
             kb = [[InlineKeyboardButton("🛒 Оформить подписку", callback_data="subscribe_license")]]
         else:
             next_charge = (
