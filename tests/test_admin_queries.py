@@ -1,8 +1,9 @@
+import asyncio
 import datetime
 import sys
 from pathlib import Path
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -16,9 +17,16 @@ class DummyRequest:
 
 
 def setup_test_db():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
-    TestingSessionLocal = sessionmaker(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:", connect_args={"check_same_thread": False}
+    )
+    TestingSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
+
+    async def init_models():
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+    asyncio.run(init_models())
     return engine, TestingSessionLocal
 
 
@@ -28,11 +36,11 @@ def count_queries(engine, func):
     def before_cursor_execute(*args, **kwargs):
         queries["count"] += 1
 
-    event.listen(engine, "before_cursor_execute", before_cursor_execute)
+    event.listen(engine.sync_engine, "before_cursor_execute", before_cursor_execute)
     try:
-        func()
+        asyncio.run(func())
     finally:
-        event.remove(engine, "before_cursor_execute", before_cursor_execute)
+        event.remove(engine.sync_engine, "before_cursor_execute", before_cursor_execute)
     return queries["count"]
 
 
@@ -56,17 +64,20 @@ def test_admin_dashboard_query_count(monkeypatch):
     admin_routes = importlib.import_module("server.admin.routes")
 
     engine, TestingSessionLocal = setup_test_db()
-    db = TestingSessionLocal()
-    user = User(telegram_id=1)
-    lic = License(license_key="lk1", user=user, is_active=True)
-    db.add_all([user, lic])
-    db.commit()
-    db.close()
+
+    async def seed():
+        async with TestingSessionLocal() as db:
+            user = User(telegram_id=1)
+            lic = License(license_key="lk1", user=user, is_active=True)
+            db.add_all([user, lic])
+            await db.commit()
+
+    asyncio.run(seed())
 
     monkeypatch.setattr(admin_routes, "SessionLocal", TestingSessionLocal)
 
-    def call():
-        admin_routes.admin_dashboard(DummyRequest())
+    async def call():
+        await admin_routes.admin_dashboard(DummyRequest())
 
     query_count = count_queries(engine, call)
     assert query_count == 1
@@ -88,18 +99,21 @@ def test_admin_users_query_count(monkeypatch):
     admin_routes = importlib.import_module("server.admin.routes")
 
     engine, TestingSessionLocal = setup_test_db()
-    db = TestingSessionLocal()
-    user1 = User(telegram_id=1)
-    user2 = User(telegram_id=2)
-    lic1 = License(license_key="lk1", user=user1)
-    db.add_all([user1, user2, lic1])
-    db.commit()
-    db.close()
+
+    async def seed():
+        async with TestingSessionLocal() as db:
+            user1 = User(telegram_id=1)
+            user2 = User(telegram_id=2)
+            lic1 = License(license_key="lk1", user=user1)
+            db.add_all([user1, user2, lic1])
+            await db.commit()
+
+    asyncio.run(seed())
 
     monkeypatch.setattr(admin_routes, "SessionLocal", TestingSessionLocal)
 
-    def call():
-        admin_routes.admin_users(DummyRequest())
+    async def call():
+        await admin_routes.admin_users(DummyRequest())
 
     query_count = count_queries(engine, call)
     assert query_count == 1
