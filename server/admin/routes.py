@@ -10,7 +10,7 @@ from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
 from starlette.status import HTTP_303_SEE_OTHER
-from sqlalchemy import cast, delete, or_, select, String
+from sqlalchemy import cast, delete, func, or_, select, String
 
 
 admin_router = APIRouter()
@@ -113,21 +113,21 @@ async def extend_license(license_key: str = Form(...)):
 @admin_router.get("/admin/users", response_class=HTMLResponse)
 async def admin_users(request: Request):
     async with SessionLocal() as db:
-        result = await db.execute(select(User))
-        users = result.scalars().all()
-        user_data = []
+        result = await db.execute(
+            select(User, func.count(License.id).label("license_count"))
+            .outerjoin(License)
+            .group_by(User.id)
+        )
+        rows = result.all()
 
-        for u in users:
-            result = await db.execute(select(License).filter_by(user_id=u.id))
-            license_count = len(result.scalars().all())
-
-            user_data.append(
-                {
-                    "id": u.id,
-                    "telegram_id": u.telegram_id,
-                    "license_count": license_count,
-                }
-            )
+    user_data = [
+        {
+            "id": user.id,
+            "telegram_id": user.telegram_id,
+            "license_count": license_count,
+        }
+        for user, license_count in rows
+    ]
 
     return templates.TemplateResponse(
         "users.html", {"request": request, "users": user_data}
