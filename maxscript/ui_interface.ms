@@ -26,11 +26,14 @@ buttontext:"Notifier"
                 local raw = wc.DownloadString url
 
                 try (
-                    local jsonPath = getFilenamePath (getSourceFileName()) + "Newtonsoft.Json.dll"
+                    -- Build DLL path from a predefined scripts directory
+                    local dllDir = pathConfig.appendPath (getDir #scripts) "RenderLicenseApp"
+                    local jsonPath = pathConfig.appendPath dllDir "Newtonsoft.Json.dll"
+                    format "Loading Newtonsoft.Json.dll from: %\n" jsonPath
                     if doesFileExist jsonPath then (
                         dotNet.loadAssembly jsonPath
                     ) else (
-                        messageBox "❌ Newtonsoft.Json.dll not found" title:"RenderLicenseApp"
+                        messageBox ("❌ Newtonsoft.Json.dll not found:\n" + jsonPath) title:"RenderLicenseApp"
                         userIdLabel.text = ""
                         return undefined
                     )
