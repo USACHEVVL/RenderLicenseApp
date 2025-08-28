@@ -19,14 +19,11 @@ from sqlalchemy import select
 
 load_dotenv()
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-bot = None
 if not TG_TOKEN:
-    logging.warning(
-        "TELEGRAM_BOT_TOKEN is not set; Telegram bot initialization skipped."
-    )
-else:
-    bot = Bot(token=TG_TOKEN)
+    logging.critical("TELEGRAM_BOT_TOKEN is not set; aborting startup")
+    raise RuntimeError("TELEGRAM_BOT_TOKEN environment variable is required")
+
+bot = Bot(token=TG_TOKEN)
 
 app = FastAPI()
 BASE_DIR = Path(__file__).resolve().parent
