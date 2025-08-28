@@ -19,7 +19,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @admin_router.get("/admin", response_class=HTMLResponse)
-
 async def admin_dashboard(
     request: Request, status: str = "", sort: str = "", q: str = ""
 ):
@@ -47,37 +46,12 @@ async def admin_dashboard(
         result = await db.execute(licenses_query)
         rows = result.all()
 
-<<<<<<< ours
-<<<<<<< ours
-    enriched_licenses = [
-        {
-            "key": lic.license_key,
-            "next_charge_at": lic.next_charge_at.strftime("%d.%m.%Y") if lic.next_charge_at else "—",
-            "user_id": user.telegram_id if user else "—",
-            "status": "✅ Активна" if lic.is_active else "❌ Неактивна",
-        }
-        for lic, user in licenses
-    ]
-
-    db.close()
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "licenses": enriched_licenses,
-        "selected_status": status,
-        "selected_sort": sort,
-        "q": q
-    })
-=======
-=======
->>>>>>> theirs
     enriched_licenses = []
     for lic, user in rows:
         enriched_licenses.append(
             {
                 "key": lic.license_key,
-                "next_charge_at": lic.next_charge_at.strftime("%d.%m.%Y")
-                if lic.next_charge_at
-                else "—",
+                "next_charge_at": lic.next_charge_at.strftime("%d.%m.%Y") if lic.next_charge_at else "—",
                 "user_id": user.telegram_id if user else "—",
                 "status": "✅ Активна" if lic.is_active else "❌ Неактивна",
             }
@@ -93,10 +67,7 @@ async def admin_dashboard(
             "q": q,
         },
     )
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
+
 
 @admin_router.post("/admin/delete")
 async def delete_license(license_key: str = Form(...)):
@@ -138,29 +109,8 @@ async def extend_license(license_key: str = Form(...)):
 
     return RedirectResponse(url="/admin", status_code=303)
 
-@admin_router.get("/admin/users", response_class=HTMLResponse)
-<<<<<<< ours
-<<<<<<< ours
-def admin_users(request: Request):
-    db = SessionLocal()
-    users_query = (
-        db.query(User, func.count(License.id).label("license_count"))
-        .outerjoin(License, User.id == License.user_id)
-        .group_by(User.id)
-    )
-    user_data = [
-        {
-            "id": user.id,
-            "telegram_id": user.telegram_id,
-            "license_count": license_count,
-        }
-        for user, license_count in users_query.all()
-    ]
 
-    db.close()
-=======
-=======
->>>>>>> theirs
+@admin_router.get("/admin/users", response_class=HTMLResponse)
 async def admin_users(request: Request):
     async with SessionLocal() as db:
         result = await db.execute(select(User))
@@ -178,14 +128,11 @@ async def admin_users(request: Request):
                     "license_count": license_count,
                 }
             )
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
 
     return templates.TemplateResponse(
         "users.html", {"request": request, "users": user_data}
     )
+
 
 @admin_router.post("/admin/users/delete")
 async def delete_user(user_id: int = Form(...)):

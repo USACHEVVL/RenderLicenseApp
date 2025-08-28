@@ -3,11 +3,11 @@
 import asyncio
 from sqlalchemy import delete
 
-from server.db.session import SQLALCHEMY_DATABASE_URL, SessionLocal
+from server.db.session import DATABASE_URL, SessionLocal
 from server.models.license import License
 from server.models.user import User
 
-print(f"🗂 Используется база данных: {SQLALCHEMY_DATABASE_URL}")
+print(f"🗂 Используется база данных: {DATABASE_URL}")
 
 
 async def main() -> None:
