@@ -1,8 +1,10 @@
 import sqlite3
+from server.db.session import SQLALCHEMY_DATABASE_URL
 
 print("🔍 Подключаюсь к БД...")
 
-conn = sqlite3.connect("server/db/database.db")
+db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "", 1)
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 print("🔎 Выполняю SQL-запрос...")

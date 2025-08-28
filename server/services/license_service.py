@@ -1,10 +1,17 @@
-from sqlalchemy.orm import Session
+"""Operations for managing :class:`License` records asynchronously."""
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from server.models.license import License
 from server.models.user import User
 
 
-def create_license(db: Session, license_key: str, user: User, next_charge_at=None):
-    license = db.query(License).filter_by(user_id=user.id).first()
+async def create_license(
+    db: AsyncSession, license_key: str, user: User, next_charge_at=None
+):
+    result = await db.execute(select(License).filter_by(user_id=user.id))
+    license = result.scalars().first()
     if license:
         license.license_key = license_key
         if next_charge_at is not None:
@@ -20,9 +27,11 @@ def create_license(db: Session, license_key: str, user: User, next_charge_at=Non
             is_active=True,
         )
         db.add(license)
-    db.commit()
-    db.refresh(license)
+    await db.commit()
+    await db.refresh(license)
     return license
 
-def get_license_by_key(db: Session, license_key: str):
-    return db.query(License).filter(License.license_key == license_key).first()
+
+async def get_license_by_key(db: AsyncSession, license_key: str):
+    result = await db.execute(select(License).filter(License.license_key == license_key))
+    return result.scalars().first()

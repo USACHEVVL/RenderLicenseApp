@@ -14,6 +14,7 @@ from server.api.user_router import router as user_router
 from server.db.session import SessionLocal
 from server.models.license import License
 from server.models.user import User
+from sqlalchemy import select
 
 
 load_dotenv()
@@ -51,18 +52,21 @@ async def handle_render_notify(data: RenderData):
     проблемы отдельно от механизма лицензирования.
     """
 
-    db = SessionLocal()
     user_chat_id = None
 
-    try:
-        license = db.query(License).filter_by(license_key=data.license_key).first()
+    async with SessionLocal() as db:
+        result = await db.execute(
+            select(License).filter_by(license_key=data.license_key)
+        )
+        license = result.scalars().first()
         if (
             license
             and license.is_active
             and license.next_charge_at
             and license.next_charge_at > datetime.utcnow()
         ):
-            user = db.query(User).filter_by(id=license.user_id).first()
+            result = await db.execute(select(User).filter_by(id=license.user_id))
+            user = result.scalars().first()
             if user:
                 user_chat_id = user.telegram_id
         else:
@@ -70,14 +74,15 @@ async def handle_render_notify(data: RenderData):
                 "Inactive or missing license for key %s; skipping notification",
                 data.license_key,
             )
-    finally:
-        db.close()
 
     formatted = data.log
 
     # Отправляем лог владельцу лицензии только при активной лицензии и наличии chat_id
     if bot and user_chat_id:
-        await bot.send_message(chat_id=user_chat_id, text=formatted)
+        try:
+            await bot.send_message(chat_id=user_chat_id, text=formatted)
+        except Exception:
+            logging.exception("Failed to send Telegram message")
     elif bot:
         logging.info(
             "Telegram message skipped: no active license or user chat ID."
@@ -87,4 +92,4 @@ async def handle_render_notify(data: RenderData):
             "Bot is not initialized; render notification not sent."
         )
 
-    return {"status": "ok", "message": "Лог получен и отправлен в Telegram"}
+    return {"status": "ok"}

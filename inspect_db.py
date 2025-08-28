@@ -1,7 +1,7 @@
 import sqlite3
-import os
+from server.db.session import SQLALCHEMY_DATABASE_URL
 
-db_path = os.path.join("server", "db", "database.db")
+db_path = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "", 1)
 
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()

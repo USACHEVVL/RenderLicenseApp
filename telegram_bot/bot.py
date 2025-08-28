@@ -14,6 +14,7 @@ from telegram.ext import (
 )
 
 from server.db.session import SessionLocal
+from sqlalchemy import select
 from server.models.user import User
 from server.models.license import License
 from server.services.referral_service import get_referrals_and_bonus_days
@@ -62,15 +63,15 @@ async def send_main_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> No
     ]
 
     # Пытаемся отправить логотип, если есть локальный файл
-    logo_path = (Path(__file__).resolve().parent / "assets" / "logo.png")
+    logo_path = Path(__file__).resolve().parent / "assets" / "logo.png"
     if logo_path.exists():
-        with logo_path.open("rb") as logo:
-            await context.bot.send_photo(
-                chat_id=user_id,
-                photo=logo,
-                caption="Добро пожаловать! Выберите действие:",
-                reply_markup=InlineKeyboardMarkup(keyboard),
-            )
+        logo_bytes = await asyncio.to_thread(logo_path.read_bytes)
+        await context.bot.send_photo(
+            chat_id=user_id,
+            photo=logo_bytes,
+            caption="Добро пожаловать! Выберите действие:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
     else:
         await context.bot.send_message(
             chat_id=user_id,
@@ -83,13 +84,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     tg_id = update.effective_user.id
     start_param = context.args[0] if context.args else None
 
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(telegram_id=tg_id).first()
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
+        user = result.scalars().first()
         if not user:
             referred_by_id = None
             if start_param:
-                referrer = db.query(User).filter_by(referral_code=start_param).first()
+                result = await db.execute(
+                    select(User).filter_by(referral_code=start_param)
+                )
+                referrer = result.scalars().first()
                 if referrer:
                     referred_by_id = referrer.id
             user = User(
@@ -98,12 +102,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 referred_by_id=referred_by_id,
             )
             db.add(user)
-            db.commit()
+            await db.commit()
         elif not user.referral_code:
             user.referral_code = str(uuid.uuid4())
-            db.commit()
-    finally:
-        db.close()
+            await db.commit()
 
     await send_main_menu(tg_id, context)
 
@@ -112,11 +114,13 @@ async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
     query = update.callback_query
     await query.answer()
     tg_id = update.effective_user.id
-
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(telegram_id=tg_id).first()
-        license = db.query(License).filter_by(user_id=user.id).first() if user else None
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
+        user = result.scalars().first()
+        license = None
+        if user:
+            result = await db.execute(select(License).filter_by(user_id=user.id))
+            license = result.scalars().first()
 
         if not license or not license.is_active:
             msg = (
@@ -140,29 +144,24 @@ async def show_licenses_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await query.edit_message_text(
             msg, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb)
         )
-    finally:
-        db.close()
 
 
 async def invite_friend(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     tg_id = update.effective_user.id
-
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(telegram_id=tg_id).first()
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
+        user = result.scalars().first()
         if user and not user.referral_code:
             user.referral_code = str(uuid.uuid4())
-            db.commit()
+            await db.commit()
         elif not user:
             user = User(telegram_id=tg_id, referral_code=str(uuid.uuid4()))
             db.add(user)
-            db.commit()
+            await db.commit()
         bot_username = (await context.bot.get_me()).username
         link = f"https://t.me/{bot_username}?start={user.referral_code}"
-    finally:
-        db.close()
 
     await query.edit_message_text(
         f"Поделитесь этой ссылкой, чтобы получить бонусные дни:\n{link}",
@@ -178,14 +177,12 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await query.answer()
 
     tg_id = update.effective_user.id
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(telegram_id=tg_id).first()
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
+        user = result.scalars().first()
         referrals, days_left = ([], 0)
         if user:
-            referrals, days_left = get_referrals_and_bonus_days(db, user)
-    finally:
-        db.close()
+            referrals, days_left = await get_referrals_and_bonus_days(db, user)
 
     lines = "\n".join(f"• {r.telegram_id}" for r in referrals)
     msg = (
@@ -209,16 +206,17 @@ async def subscribe_license(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     await query.answer()
 
     tg_id = update.effective_user.id
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(telegram_id=tg_id).first()
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
+        user = result.scalars().first()
         if not user:
             user = User(telegram_id=tg_id, referral_code=str(uuid.uuid4()))
             db.add(user)
-            db.commit()
-            db.refresh(user)
+            await db.commit()
+            await db.refresh(user)
 
-        lic = db.query(License).filter_by(user_id=user.id).first()
+        result = await db.execute(select(License).filter_by(user_id=user.id))
+        lic = result.scalars().first()
         now = datetime.datetime.utcnow()
         next_charge = now + datetime.timedelta(days=30)
         if lic:
@@ -236,15 +234,20 @@ async def subscribe_license(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 valid_until=next_charge,
             )
             db.add(lic)
-        db.commit()
+        await db.commit()
 
-        # Реферальный бонус один раз при первой активации
-        if getattr(user, "referred_by_id", None) and not getattr(user, "referral_bonus_claimed", False):
-            referrer = db.query(User).filter_by(id=user.referred_by_id).first()
+        if getattr(user, "referred_by_id", None) and not getattr(
+            user, "referral_bonus_claimed", False
+        ):
+            result = await db.execute(select(User).filter_by(id=user.referred_by_id))
+            referrer = result.scalars().first()
             if referrer:
-                ref_license = db.query(License).filter_by(user_id=referrer.id).first()
+                result = await db.execute(select(License).filter_by(user_id=referrer.id))
+                ref_license = result.scalars().first()
                 if ref_license:
-                    ref_license.valid_until = max(ref_license.valid_until or now, now) + datetime.timedelta(days=30)
+                    ref_license.valid_until = max(
+                        ref_license.valid_until or now, now
+                    ) + datetime.timedelta(days=30)
                     ref_license.is_active = True
                     ref_license.next_charge_at = ref_license.valid_until
                 else:
@@ -257,7 +260,7 @@ async def subscribe_license(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                     )
                     db.add(ref_license)
                 user.referral_bonus_claimed = True
-                db.commit()
+                await db.commit()
                 try:
                     await context.bot.send_message(
                         chat_id=referrer.telegram_id,
@@ -265,8 +268,6 @@ async def subscribe_license(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                     )
                 except Exception:
                     pass
-    finally:
-        db.close()
 
     await query.edit_message_text("✅ Подписка активирована на 30 дней (заглушка).")
     await send_main_menu(tg_id, context)
@@ -276,20 +277,19 @@ async def cancel_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await query.answer()
     tg_id = update.effective_user.id
-
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(telegram_id=tg_id).first()
-        lic = db.query(License).filter_by(user_id=user.id).first() if user else None
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
+        user = result.scalars().first()
+        lic = None
+        if user:
+            result = await db.execute(select(License).filter_by(user_id=user.id))
+            lic = result.scalars().first()
         if lic:
-            # В режиме заглушки просто выключаем подписку
             if hasattr(lic, "subscription_id"):
                 lic.subscription_id = None
             lic.is_active = False
             lic.next_charge_at = None
-            db.commit()
-    finally:
-        db.close()
+            await db.commit()
 
     await query.edit_message_text("❌ Подписка отменена.")
     await send_main_menu(tg_id, context)
