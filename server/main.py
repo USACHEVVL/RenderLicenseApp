@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
-from telegram import Bot
+from telegram_bot.notify import send_telegram_message
 
 from server.admin.routes import admin_router
 from server.api import license_router
@@ -16,25 +16,8 @@ from server.models.license import License
 from server.models.user import User
 from sqlalchemy import select
 
-
 load_dotenv()
-TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-if not TG_TOKEN:
-    logging.critical("TELEGRAM_BOT_TOKEN is not set; aborting startup")
-    raise RuntimeError("TELEGRAM_BOT_TOKEN environment variable is required")
-
-bot = Bot(token=TG_TOKEN)
 app = FastAPI()
-
-
-@app.on_event("startup")
-async def startup_event():
-    await bot.initialize()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await bot.shutdown()
 
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -51,13 +34,8 @@ class RenderData(BaseModel):
 
 @app.post("/api/render_notify")
 async def handle_render_notify(data: RenderData):
-    """Получает лог рендера и отправляет его в Telegram.
-
-    Если по переданному ключу найден владелец активной лицензии, сообщение
-    отправляется ему. В противном случае отправка пропускается. Проверка
-    лицензии не блокирует отправку уведомления, что позволяет диагностировать
-    проблемы отдельно от механизма лицензирования.
-    """
+    """Получает лог рендера и отправляет его в Telegram."""
+    logging.info(">>> Получен render_notify: license_key=%s, log=%s", data.license_key, data.log)
 
     user_chat_id = None
     user_id = None
@@ -68,9 +46,7 @@ async def handle_render_notify(data: RenderData):
         )
         license = result.scalars().first()
         if not license:
-            logging.warning(
-                "License not found for key %s", data.license_key
-            )
+            logging.warning("License not found for key %s", data.license_key)
         elif (
             license.is_active
             and license.next_charge_at
@@ -101,21 +77,13 @@ async def handle_render_notify(data: RenderData):
 
     formatted = data.log
 
-    # Отправляем лог владельцу лицензии только при активной лицензии и наличии chat_id
-    if bot and user_chat_id:
-        try:
-            await bot.send_message(chat_id=user_chat_id, text=formatted)
-        except Exception:
-            logging.exception("Failed to send Telegram message")
-    elif bot:
+    if user_chat_id:
+        await send_telegram_message(chat_id=user_chat_id, text=formatted)
+    else:
         logging.info(
-            "Telegram message skipped: license_key=%s user_id=%s",
+            "Telegram message not sent: license_key=%s user_id=%s (chat_id missing)",
             data.license_key,
             user_id,
-        )
-    else:
-        logging.warning(
-            "Bot is not initialized; render notification not sent."
         )
 
     return {"status": "ok"}
