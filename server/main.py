@@ -24,8 +24,18 @@ if not TG_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN environment variable is required")
 
 bot = Bot(token=TG_TOKEN)
-
 app = FastAPI()
+
+
+@app.on_event("startup")
+async def startup_event():
+    await bot.initialize()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await bot.shutdown()
+
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
