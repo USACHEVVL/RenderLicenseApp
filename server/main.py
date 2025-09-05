@@ -13,8 +13,8 @@ from server.api import license_router
 from server.api.user_router import router as user_router
 from server.db.session import SessionLocal
 from server.models.license import License
-from server.models.user import User
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 load_dotenv()
 app = FastAPI()
@@ -42,19 +42,21 @@ async def handle_render_notify(data: RenderData):
 
     async with SessionLocal() as db:
         result = await db.execute(
-            select(License).filter_by(license_key=data.license_key)
+            select(License)
+            .options(selectinload(License.user))
+            .filter_by(license_key=data.license_key)
         )
         license = result.scalars().first()
+        now = datetime.utcnow()
         if not license:
             logging.warning("License not found for key %s", data.license_key)
         elif (
             license.is_active
             and license.next_charge_at
-            and license.next_charge_at > datetime.utcnow()
+            and license.next_charge_at > now
         ):
             user_id = license.user_id
-            result = await db.execute(select(User).filter_by(id=user_id))
-            user = result.scalars().first()
+            user = license.user
             if not user:
                 logging.warning(
                     "User %s not found for license %s",
