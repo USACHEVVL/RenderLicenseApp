@@ -1,3 +1,4 @@
+from server.api import payment_router
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -26,6 +27,8 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.include_router(admin_router)
 app.include_router(license_router.router, prefix="/api")
 app.include_router(user_router, prefix="/api")
+app.include_router(payment_router.router)
+
 
 # Модель для рендера
 class RenderData(BaseModel):

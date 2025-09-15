@@ -299,7 +299,7 @@ if json != undefined and json.ContainsKey "status" then (
             local logText =
                 "🎬 Render finished\n" +
                 "⏰ Time: " + timeStr + "\n" +
-                "🗕 Date: " + dateStr + "\n" +
+                "📅 Date: " + dateStr + "\n" +
                 "🗜 Scene: " + sceneName + "\n" +
                 "📷 View: " + cameraName
 

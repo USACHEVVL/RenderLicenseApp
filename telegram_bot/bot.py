@@ -2,6 +2,7 @@ import os
 import asyncio
 import uuid
 import datetime
+import httpx
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -201,76 +202,53 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 async def subscribe_license(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # Заглушка: активируем/продлеваем лицензию на 30 дней без оплаты
+    """Создаёт платёж через FastAPI и отправляет пользователю кнопку с ссылкой на оплату."""
     query = update.callback_query
     await query.answer()
 
     tg_id = update.effective_user.id
-    async with SessionLocal() as db:
-        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
-        user = result.scalars().first()
-        if not user:
-            user = User(telegram_id=tg_id, referral_code=str(uuid.uuid4()))
-            db.add(user)
-            await db.commit()
-            await db.refresh(user)
 
-        result = await db.execute(select(License).filter_by(user_id=user.id))
-        lic = result.scalars().first()
-        now = datetime.datetime.utcnow()
-        next_charge = now + datetime.timedelta(days=30)
-        if lic:
-            if not getattr(lic, "license_key", None):
-                lic.license_key = str(uuid.uuid4())
-            lic.is_active = True
-            lic.next_charge_at = next_charge
-            lic.valid_until = next_charge
-        else:
-            lic = License(
-                user_id=user.id,
-                license_key=str(uuid.uuid4()),
-                is_active=True,
-                next_charge_at=next_charge,
-                valid_until=next_charge,
+    try:
+        # Обращаемся к нашему FastAPI-эндпоинту, который создаёт платёж в ЮKassa
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                "http://127.0.0.1:8000/api/create_payment",
+                json={"telegram_id": tg_id},
             )
-            db.add(lic)
-        await db.commit()
 
-        if getattr(user, "referred_by_id", None) and not getattr(
-            user, "referral_bonus_claimed", False
-        ):
-            result = await db.execute(select(User).filter_by(id=user.referred_by_id))
-            referrer = result.scalars().first()
-            if referrer:
-                result = await db.execute(select(License).filter_by(user_id=referrer.id))
-                ref_license = result.scalars().first()
-                if ref_license:
-                    ref_license.valid_until = max(
-                        ref_license.valid_until or now, now
-                    ) + datetime.timedelta(days=30)
-                    ref_license.is_active = True
-                    ref_license.next_charge_at = ref_license.valid_until
-                else:
-                    ref_license = License(
-                        user_id=referrer.id,
-                        license_key=str(uuid.uuid4()),
-                        valid_until=now + datetime.timedelta(days=30),
-                        is_active=True,
-                        next_charge_at=now + datetime.timedelta(days=30),
-                    )
-                    db.add(ref_license)
-                user.referral_bonus_claimed = True
-                await db.commit()
-                try:
-                    await context.bot.send_message(
-                        chat_id=referrer.telegram_id,
-                        text="✅ Ваш приглашённый активировал подписку. +30 дней к вашей лицензии!",
-                    )
-                except Exception:
-                    pass
+        if resp.status_code != 200:
+            await query.edit_message_text(
+                "❌ Не удалось создать платёж. Попробуйте позже."
+            )
+            return
 
-    await query.edit_message_text("✅ Подписка активирована на 30 дней (заглушка).")
-    await send_main_menu(tg_id, context)
+        data = resp.json()
+        confirmation_url = data.get("confirmation_url")
+
+        if not confirmation_url:
+            await query.edit_message_text(
+                "⚠️ Сервер не вернул ссылку на оплату. Попробуйте позже."
+            )
+            return
+
+        # Кнопка перехода на оплату
+        kb = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("💳 Перейти к оплате", url=confirmation_url)],
+                [InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")],
+            ]
+        )
+
+        await query.edit_message_text(
+            "Чтобы оформить подписку, нажмите кнопку ниже и завершите оплату:",
+            reply_markup=kb,
+        )
+
+    except Exception as e:
+        # Можно залогировать e
+        await query.edit_message_text(
+            "⚠️ Произошла ошибка при создании платежа. Попробуйте позже."
+        )
 
 
 async def cancel_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
