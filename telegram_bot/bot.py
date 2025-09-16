@@ -199,7 +199,7 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         f"Начислено бонусных дней за всё время: {total_bonus_days}"
     )
     if lines:
-        msg += f"\n\nПриглашённые пользователи:\n{lines}"
+        msg += f"\n\n{lines}"
     else:
         msg += "\n\nПока нет приглашённых пользователей."
 
