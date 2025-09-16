@@ -8,6 +8,12 @@ Start the FastAPI server:
 make server
 ```
 
+For a production deployment use:
+
+```bash
+make server-prod
+```
+
 Start the Telegram bot:
 
 ```bash
