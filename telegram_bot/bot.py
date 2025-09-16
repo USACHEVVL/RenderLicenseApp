@@ -207,8 +207,6 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         msg += "\n\nПока нет приглашённых пользователей."
 
     keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")]]
-    if unclaimed:
-        keyboard.insert(0, [InlineKeyboardButton("Получить бонус", callback_data="claim_referral_bonus")])
     await (update.message or update.callback_query.message).reply_text(
         msg, reply_markup=InlineKeyboardMarkup(keyboard)
     )
