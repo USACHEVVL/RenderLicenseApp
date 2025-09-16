@@ -193,14 +193,11 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 db, user
             )
 
-    lines = "\n".join(f"• {r.telegram_id}" for r in referrals)
     msg = (
         f"Количество приглашённых: {len(referrals)}\n"
         f"Начислено бонусных дней за всё время: {total_bonus_days}"
     )
-    if lines:
-        msg += f"\n\n{lines}"
-    else:
+    if not referrals:
         msg += "\n\nПока нет приглашённых пользователей."
 
     keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")]]
