@@ -23,6 +23,8 @@ from server.services.referral_service import get_referrals_and_bonus_days
 
 load_dotenv()
 
+API_BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+
 
 def _load_bot_token() -> str:
     """Load and validate Telegram bot token from environment or .env.
@@ -212,7 +214,7 @@ async def subscribe_license(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         # Обращаемся к нашему FastAPI-эндпоинту, который создаёт платёж в ЮKassa
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.post(
-                "http://127.0.0.1:8000/api/create_payment",
+                f"{API_BASE}/api/create_payment",
                 json={"telegram_id": tg_id},
             )
 
