@@ -16,6 +16,11 @@ make bot
 
 The same commands are listed in `test.py` for quick reference.
 
+## Dependencies
+
+- The YooKassa SDK is pinned to the stable release `yookassa==3.3.0` in `requirements.txt`
+  to protect the integration from backwards incompatible API changes.
+
 ## Deployment
 
 When deploying the Telegram bot, set the `API_BASE_URL` environment variable to the
