@@ -14,6 +14,10 @@ from sqlalchemy import select
 from server.db.session import SessionLocal
 from server.models.user import User
 from server.models.license import License
+from server.services.referral_service import (
+    claim_referral_bonuses,
+    BONUS_DAYS_PER_REFERRAL,
+)
 from telegram_bot.notify import send_telegram_message
 
 load_dotenv()
@@ -191,6 +195,23 @@ async def yookassa_webhook(payload: Dict[str, Any]):
             db.add(lic)
 
         await db.commit()
+
+        if user.referred_by_id and not user.referral_bonus_claimed:
+            result = await db.execute(select(User).filter_by(id=user.referred_by_id))
+            referrer = result.scalars().first()
+            if referrer:
+                processed = await claim_referral_bonuses(db, referrer)
+                if processed:
+                    try:
+                        await send_telegram_message(
+                            chat_id=referrer.telegram_id,
+                            text=(
+                                "🎉 Ваш приглашённый оплатил подписку. "
+                                f"Начислено {processed * BONUS_DAYS_PER_REFERRAL} бонусных дней."
+                            ),
+                        )
+                    except Exception:
+                        pass
 
     # Финальное уведомление
     try:
