@@ -196,7 +196,6 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     lines = "\n".join(f"• {r.telegram_id}" for r in referrals)
     msg = (
         f"Количество приглашённых: {len(referrals)}\n"
-        f"Бонусных дней доступно: {bonus_days_available}\n"
         f"Начислено бонусных дней за всё время: {total_bonus_days}"
     )
     if lines:
