@@ -226,9 +226,13 @@ if json != undefined and json.ContainsKey "status" then (
             local wc = dotNetObject "System.Net.WebClient"
             wc.Headers.Add "Content-Type" "application/json; charset=utf-8"
             wc.Encoding = (dotNetClass "System.Text.Encoding").UTF8
-            wc.UploadData url "POST" ((dotNetClass "System.Text.Encoding").UTF8.GetBytes json)
+            local responseBytes = wc.UploadData url "POST" ((dotNetClass "System.Text.Encoding").UTF8.GetBytes json)
+            local responseText = (dotNetClass "System.Text.Encoding").UTF8.GetString responseBytes
+            format "RenderLicense: server response: %\n" responseText
         ) catch (
-            format "RenderLicense: failed to send log to server: %\n" (getCurrentException())
+            local ex = getCurrentException()
+            local exText = if ex != undefined then ex.ToString() else "undefined exception"
+            format "RenderLicense: failed to send log to server: %\n" exText
         )
     )
 
