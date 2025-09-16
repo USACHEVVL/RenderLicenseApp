@@ -18,7 +18,11 @@ from server.db.session import SessionLocal
 from sqlalchemy import select
 from server.models.user import User
 from server.models.license import License
-from server.services.referral_service import get_referrals_and_bonus_days
+from server.services.referral_service import (
+    get_referrals_and_bonus_days,
+    claim_referral_bonuses,
+    BONUS_DAYS_PER_REFERRAL,
+)
 
 
 load_dotenv()
@@ -183,24 +187,50 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     async with SessionLocal() as db:
         result = await db.execute(select(User).filter_by(telegram_id=tg_id))
         user = result.scalars().first()
-        referrals, days_left = ([], 0)
+        referrals, days_left, unclaimed = ([], 0, 0)
         if user:
-            referrals, days_left = await get_referrals_and_bonus_days(db, user)
+            referrals, days_left, unclaimed = await get_referrals_and_bonus_days(db, user)
 
     lines = "\n".join(f"• {r.telegram_id}" for r in referrals)
     msg = (
         f"Количество приглашённых: {len(referrals)}\n"
         f"Бонусных дней доступно: {days_left}"
     )
+    if unclaimed:
+        msg += (
+            f"\nДоступно к получению: {unclaimed * BONUS_DAYS_PER_REFERRAL}"
+            f" дней за {unclaimed} приглашённых"
+        )
     if lines:
         msg += f"\n\nПриглашённые пользователи:\n{lines}"
     else:
         msg += "\n\nПока нет приглашённых пользователей."
 
     keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")]]
+    if unclaimed:
+        keyboard.insert(0, [InlineKeyboardButton("Получить бонус", callback_data="claim_referral_bonus")])
     await (update.message or update.callback_query.message).reply_text(
         msg, reply_markup=InlineKeyboardMarkup(keyboard)
     )
+
+
+async def claim_referral_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    tg_id = update.effective_user.id
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).filter_by(telegram_id=tg_id))
+        user = result.scalars().first()
+        if not user:
+            await query.edit_message_text("Пользователь не найден.")
+            return
+        count = await claim_referral_bonuses(db, user)
+    if count:
+        text = f"✅ Начислено бонусных дней: {count * BONUS_DAYS_PER_REFERRAL}"
+    else:
+        text = "Нет бонусов к получению."
+    kb = [[InlineKeyboardButton("⬅️ Назад", callback_data="back_to_main")]]
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb))
 
 
 async def subscribe_license(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -289,6 +319,8 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return await invite_friend(update, context)
     elif command == "referral_stats":
         return await show_referrals(update, context)
+    elif command == "claim_referral_bonus":
+        return await claim_referral_bonus(update, context)
 
 
 async def main() -> None:
