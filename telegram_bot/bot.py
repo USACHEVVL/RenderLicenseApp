@@ -187,20 +187,18 @@ async def show_referrals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     async with SessionLocal() as db:
         result = await db.execute(select(User).filter_by(telegram_id=tg_id))
         user = result.scalars().first()
-        referrals, days_left, unclaimed = ([], 0, 0)
+        referrals, bonus_days_available, total_bonus_days = ([], 0, 0)
         if user:
-            referrals, days_left, unclaimed = await get_referrals_and_bonus_days(db, user)
+            referrals, bonus_days_available, total_bonus_days = await get_referrals_and_bonus_days(
+                db, user
+            )
 
     lines = "\n".join(f"• {r.telegram_id}" for r in referrals)
     msg = (
         f"Количество приглашённых: {len(referrals)}\n"
-        f"Бонусных дней доступно: {days_left}"
+        f"Бонусных дней доступно: {bonus_days_available}\n"
+        f"Начислено бонусных дней за всё время: {total_bonus_days}"
     )
-    if unclaimed:
-        msg += (
-            f"\nДоступно к получению: {unclaimed * BONUS_DAYS_PER_REFERRAL}"
-            f" дней за {unclaimed} приглашённых"
-        )
     if lines:
         msg += f"\n\nПриглашённые пользователи:\n{lines}"
     else:
